@@ -18,6 +18,7 @@ export default function ModelGate() {
   const firstVisit = useSyncExternalStore(noop, firstVisitNow, () => false);
   const [dismissed, setDismissed] = useState(false);
   const [shownForDownload, setShownForDownload] = useState(false);
+  const [woven, setWoven] = useState(false);
   const ref = useRef(null);
   const downloading = model.status === 'loading' && model.stage === 'download';
   const open = !dismissed && (firstVisit || downloading || shownForDownload);
@@ -33,24 +34,24 @@ export default function ModelGate() {
   }, [open]);
 
   useEffect(() => {
-    if (!open || model.status !== 'ready') return;
-    const t = setTimeout(() => setDismissed(true), 1600);
+    if (!open || model.status !== 'ready' || !woven) return;   // close only once the weave is complete
+    const t = setTimeout(() => setDismissed(true), 1400);
     return () => clearTimeout(t);
-  }, [open, model.status]);
+  }, [open, model.status, woven]);
 
   const close = () => setDismissed(true);
   const busy = model.status === 'starting' || model.status === 'loading';
   const ready = model.status === 'ready';
-  const state = ready ? 'ready' : model.status === 'error' ? 'error' : busy ? 'busy' : 'ask';
+  const state = ready && woven ? 'ready' : model.status === 'error' ? 'error' : busy || ready ? 'busy' : 'ask';   // ready but still weaving: keep counting
   const progress = ready ? 1 : busy ? downloadPct(model) / 100 : 0;   // 0: the whole family, faint, waiting
 
   return (
     <dialog ref={ref} className={s.gate} data-state={state} aria-labelledby="gate-title" onCancel={(e) => { e.preventDefault(); close(); }}>
       <div className={s.brand}><Mark size={26} /><span id="gate-title">Kinthread</span></div>
       {open && (
-        <WeaveStage progress={progress}>
+        <WeaveStage progress={progress} onWoven={() => setWoven(true)}>
           {state === 'ask' && <AskCopy total={model.total} onStart={() => startModel()} onLater={close} />}
-          {(state === 'busy' || state === 'ready') && <DownloadStatus model={model} onHide={close} />}
+          {(state === 'busy' || state === 'ready') && <DownloadStatus model={model} onHide={close} woven={woven} />}
           {state === 'error' && (
             <>
               <h2 className={w.title}>The model couldn&rsquo;t load.</h2>

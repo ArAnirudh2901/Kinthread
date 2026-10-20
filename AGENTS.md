@@ -171,3 +171,6 @@ will decide later).
   copy-by-hand fallback), undo for Clear (8 s), contradiction check (`lib/consistency.js`: gender clash, self relation,
   parent cycle; tests in `tests/consistency.test.mjs`), error boundary around the map + `app/error.js`, story capped at
   6000 characters.
+- 2026-10-20: loader weave reworked after a phone recording: breadth-first weave order from the top ancestor (each
+  thread starts at someone drawn), steady pace (<= one full weave per 5 s, never ahead of the download), people bloom
+  in as their thread arrives, "Ready" and closing wait for the weave to complete (`onWoven`).

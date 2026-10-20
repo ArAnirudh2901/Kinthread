@@ -50,6 +50,7 @@ const PALETTES = {
 };
 const FOVY = 0.62;
 const FILL = 0.8;
+const WEAVE_SECONDS = 5;   // the loader weaves at most this fast, one thread at a time, never ahead of the download
 const SPIN_TAU = 5;    // hero spin decays over ~3 tau, then the scene rests (no endless loop)
 const PULSE_END = 9;   // seconds the light keeps running down the thread
    // share of the narrower half field of view the family may use (the rest is margin)
@@ -86,7 +87,7 @@ function compile(gl, vs, fs) {
 }
 
 /** Returns a controller, or null when WebGL is unavailable (the canvas then stays a plain background). */
-export function createConstellation(canvas, { variant = 'hero', lite = false, still = false } = {}) {
+export function createConstellation(canvas, { variant = 'hero', lite = false, still = false, onWoven } = {}) {
   const graph = buildConstellation({ lite });
   const { nodes, edges, path } = graph;
   // centre the family on its middle, and measure the sphere it turns in, so the camera can fit any canvas shape
@@ -103,9 +104,36 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
 
   // nodes in the order their first thread appears, so weaving reveals people with their threads
-  const firstEdge = new Array(nodes.length).fill(Infinity);
-  edges.forEach((e, i) => { firstEdge[e.a] = Math.min(firstEdge[e.a], i); firstEdge[e.b] = Math.min(firstEdge[e.b], i); });
+  // weave order: breadth-first from the top ancestor, so every new thread starts at someone already drawn and grows
+  // outward (one continuous web, never a thread in empty space). dir[k] = [from, to]; firstEdge[i] = the rank of the
+  // thread that reaches person i (-1 for the ones the weave starts from)
+  const order = [], dir = new Array(edges.length), firstEdge = new Array(nodes.length).fill(-1);
+  {
+    const seen = new Set(), used = new Set(), adj = nodes.map(() => []);
+    edges.forEach((e, k) => { adj[e.a].push(k); adj[e.b].push(k); });
+    for (const seed of [graph.top, ...nodes.keys()]) {
+      if (seen.has(seed)) continue;
+      seen.add(seed);
+      const queue = [seed];
+      while (queue.length) {
+        const n = queue.shift();
+        for (const k of adj[n]) {
+          if (used.has(k)) continue;
+          used.add(k);
+          const other = edges[k].a === n ? edges[k].b : edges[k].a;
+          dir[k] = [n, other];
+          order.push(k);
+          if (!seen.has(other)) { seen.add(other); firstEdge[other] = order.length - 1; queue.push(other); }
+        }
+      }
+    }
+  }
   const nodeOrder = nodes.map((_, i) => i).sort((a, b) => firstEdge[a] - firstEdge[b]);
+  const nodeStyle = (i) => ({
+    col: i === graph.top ? C.copper : i === graph.leaf ? C.lichen : pathNodes.has(i) ? C.lichen : C.sea,
+    size: i === graph.top || i === graph.leaf ? 9 : pathNodes.has(i) ? 6.5 : 5,
+  });
+  let woven = false;
 
   function init() {
     const opts = { antialias: !lite, alpha: true, premultipliedAlpha: true, depth: false, powerPreference: 'low-power', preserveDrawingBuffer: false };
@@ -120,7 +148,8 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     buf.lv = gl.createBuffer();
     buf.li = gl.createBuffer();
     buf.pv = gl.createBuffer();
-    buf.grow = gl.createBuffer();   // the one thread being drawn right now
+    buf.grow = gl.createBuffer();
+    buf.bloom = gl.createBuffer();   // the person a growing thread is about to reach   // the one thread being drawn right now
     buf.pulse = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf.pulse); gl.bufferData(gl.ARRAY_BUFFER, 8 * 8 * 4, gl.DYNAMIC_DRAW);
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
@@ -138,16 +167,14 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
       const w = onPath.has(k) ? 2.4 : 1.1;
       const verts = [[A, B, 1], [A, B, -1], [B, A, -1], [B, A, 1]];
       verts.forEach(([p, q, s], j) => lv.set([p.x, p.y, p.z, q.x, q.y, q.z, s, ...col, w], (k * 4 + j) * 12));
-      li.set([k * 4, k * 4 + 1, k * 4 + 2, k * 4 + 1, k * 4 + 3, k * 4 + 2], k * 6);
     });
+    order.forEach((k, r) => li.set([k * 4, k * 4 + 1, k * 4 + 2, k * 4 + 1, k * 4 + 3, k * 4 + 2], r * 6));   // drawn in weave order
     gl.bindBuffer(gl.ARRAY_BUFFER, buf.lv); gl.bufferData(gl.ARRAY_BUFFER, lv, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.li); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, li, gl.STATIC_DRAW);
     // people: 8 floats each
     const pv = new Float32Array(nodes.length * 8);
     nodeOrder.forEach((i, k) => {
-      const n = nodes[i];
-      const col = i === graph.top ? C.copper : i === graph.leaf ? C.lichen : pathNodes.has(i) ? C.lichen : C.sea;
-      const size = i === graph.top || i === graph.leaf ? 9 : pathNodes.has(i) ? 6.5 : 5;
+      const n = nodes[i], { col, size } = nodeStyle(i);
       pv.set([n.x, n.y, n.z, ...col, size], k * 8);
     });
     gl.bindBuffer(gl.ARRAY_BUFFER, buf.pv); gl.bufferData(gl.ARRAY_BUFFER, pv, gl.STATIC_DRAW);
@@ -194,8 +221,8 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     // download progress lands in big steps (16 MB parts): glide toward it, so threads are drawn one by one
     if (variant === 'weave') {
       const dt = Math.min(0.1, lastDraw ? (now - lastDraw) / 1000 : 0);
-      progress += (target - progress) * Math.min(1, dt * 2.2);
-      if (target >= 1 && progress > 0.999) progress = 1;
+      progress = still ? target : Math.min(target, progress + dt / WEAVE_SECONDS);
+      if (progress >= 1 && !woven) { woven = true; onWoven?.(); }
     }
     lastDraw = now;
     const shownEdges = Math.floor(progress * edges.length + 1e-6);
@@ -219,7 +246,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     // the next thread grows from its first person toward the second instead of appearing whole
     let tip = null;
     if (grow > 0.001 && shownEdges < edges.length) {
-      const k = shownEdges, e = edges[k], A = nodes[e.a], B = nodes[e.b], f = 1 - (1 - grow) ** 2;
+      const k = order[shownEdges], e = edges[k], A = nodes[dir[k][0]], B = nodes[dir[k][1]], f = 1 - (1 - grow) ** 2;
       tip = { x: A.x + (B.x - A.x) * f, y: A.y + (B.y - A.y) * f, z: A.z + (B.z - A.z) * f };
       const col = onPath.has(k) ? C.lit : e.kind === 'spouse' ? C.spouse : C.thread, w = onPath.has(k) ? 2.4 : 1.1;
       const gv = new Float32Array(48);
@@ -243,6 +270,19 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     }
     gl.uniform1f(point.uni.u_alpha, 1);
     if (shownNodes) gl.drawArrays(gl.POINTS, 0, shownNodes);
+    // the person at the end of the growing thread blooms in as the thread arrives
+    if (grow > 0.6 && shownEdges < edges.length) {
+      const to = dir[order[shownEdges]][1];
+      if (firstEdge[to] === shownEdges) {
+        const f = Math.min(1, (grow - 0.6) / 0.4), n = nodes[to], { col, size } = nodeStyle(to);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf.bloom);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([n.x, n.y, n.z, ...col, size * (0.4 + 0.6 * f)]), gl.DYNAMIC_DRAW);
+        bind(point, 8, [['a_pos', 3], ['a_color', 4], ['a_size', 1]]);
+        gl.uniform1f(point.uni.u_alpha, f);
+        gl.drawArrays(gl.POINTS, 0, 1);
+        gl.uniform1f(point.uni.u_alpha, 1);
+      }
+    }
 
     // pulses: light travelling down the lit thread (hero) or at the newest thread (weave)
     const pulses = [];
