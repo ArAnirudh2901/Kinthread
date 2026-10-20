@@ -50,5 +50,3 @@ next-env.d.ts
 # browser harness output
 /tools/harness/result.jsonl
 
-# model files downloaded from the GitHub Release on a fresh clone
-/.model-cache/

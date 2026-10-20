@@ -89,7 +89,7 @@ The site's *How it works* and *Build log* pages go deeper, including how the mod
 
 ## Running it locally
 
-Requirements: Node.js 20.11 or newer. The model downloads on first run (see below).
+Requirements: Node.js 20.11 or newer. The model is included (see below).
 
 ```bash
 git clone https://github.com/ArAnirudh2901/Kinthread.git
@@ -100,19 +100,16 @@ npm run dev          # http://localhost:3000
 
 ### Model files
 
-The runtime and weights (about 62 MB) are not stored in git. `npm run sync`, which runs automatically before `dev`
-and `build`, fetches them for you:
+The final trained model is included: `vendor/kinship/` holds the weights, model settings and the WebAssembly
+runtime (17 files, 59 MB), so a clone works offline with nothing to download. `npm run sync`, which runs
+automatically before `dev` and `build`, checks every file's size and SHA-256 against `vendor/kinship/manifest.json`
+and stops with instructions if anything differs. `.gitattributes` marks the folder binary, so git never changes a
+byte (no line-ending conversion, on any OS). Don't use Git LFS for this folder.
 
-- **Fresh clone:** it downloads the files pinned in `model.lock.json` from this repo's
-  [GitHub Release](https://github.com/ArAnirudh2901/Kinthread/releases), checks each one's SHA-256, and caches them in
-  `.model-cache/`. Nothing else to do.
-- **With the model project:** if [LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch) is checked out
-  at `../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (or `KINSHIP_SRC` points at it), it copies from there
-  instead, checked against that project's `model_manifest.json`, and updates `model.lock.json` when the model changes.
-  Publish a changed model with `npm run model:release` (owner only).
-
-Either way the files land in hashed folders (`public/r/<hash>/`, `public/m/<hash>/`), so a new model can never be
-mixed with old code.
+Maintainers with the model project ([LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch)) checked
+out at `../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (or `KINSHIP_SRC`) sync from it instead; a changed
+model refreshes `vendor/kinship/`, to be committed. Either way the files land in hashed folders (`public/r/<hash>/`,
+`public/m/<hash>/`), so a new model can never be mixed with old code.
 
 ### Commands
 

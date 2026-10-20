@@ -24,9 +24,10 @@ questions, parents and teachers, curious visitors on phones. Renamed from "Kinsh
 The models come from the LLM repo, `~/Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (`web/`: engine.c,
 kinship.js, six WASM builds, model files; see that repo's AGENTS.md). `npm run sync` copies them into
 `public/r/<hash>/` and `public/m/<hash>/` after SHA-256 checks (generated, not committed; `KINSHIP_SRC` overrides).
-Without the LLM repo (a fresh clone) it downloads the files pinned in `model.lock.json` from the GitHub Release
-(`.model-cache/`). After a model change: sync rewrites the lock, then `npm run model:release` (owner, gh as
-ArAnirudh2901) uploads a new release; commit the lock.
+Without the LLM repo (a fresh clone) it uses the committed copy in `vendor/kinship/` (final model + runtime, 59 MB,
+`binary` in .gitattributes, every file SHA-256-checked against its manifest.json). After a model change, sync from the
+LLM repo refreshes `vendor/kinship/`; commit it. No Git LFS. Training/eval Python files are not in this repo (owner
+will decide later).
 
 ## Owner's hard rules
 

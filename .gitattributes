@@ -1,0 +1,2 @@
+# Model and runtime files must stay byte-exact (their SHA-256 is checked): no line-ending conversion, no diffs.
+vendor/kinship/** binary

@@ -2,8 +2,8 @@
 //   public/r/<hash>/  worker.js, kinship.js, WASM engines, fflate (gzip fallback)
 //   public/m/<hash>/  qa.json, tagger.json, weights split into parts
 // Hashed paths let every file be cached forever and stop old weights from mixing with new runtime code.
-// Source: the LLM repo (KINSHIP_SRC) when present; otherwise the files pinned in model.lock.json are downloaded from
-// this repo's GitHub Release into .model-cache/. Every file is SHA-256-checked before anything is copied.
+// Source: the LLM repo (KINSHIP_SRC) when present, else the copy committed in vendor/kinship/ (a fresh clone).
+// Every file is checked against a SHA-256 manifest before anything is copied, so a damaged checkout never ships.
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -11,7 +11,7 @@ import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const src = path.resolve(process.env.KINSHIP_SRC || path.join(root, '../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM'));
-const LOCK = path.join(root, 'model.lock.json');
+const VENDOR = path.join(root, 'vendor/kinship');
 // Cloudflare Pages rejects files over 25 MiB; parts also download in parallel.
 const PART_BYTES = 16 * 1024 * 1024;
 
@@ -20,27 +20,24 @@ const fail = (msg) => { console.error(`sync-runtime: ${msg}`); process.exit(1); 
 
 const MODEL_FILES = ['qa.json', 'qa.bin.gz', 'tagger.json', 'tagger.bin.gz'];
 const fromRepo = existsSync(path.join(src, 'web'));
-const web = fromRepo ? path.join(src, 'web') : path.join(root, '.model-cache');
+const web = fromRepo ? path.join(src, 'web') : VENDOR;
+const vendorManifest = path.join(VENDOR, 'manifest.json');
 let manifest;
 if (fromRepo) {
   manifest = JSON.parse(await readFile(path.join(src, 'model_manifest.json'), 'utf8'));
 } else {
-  // fresh clone: fetch the pinned files from the GitHub Release (cached; re-checked on every sync)
-  if (!existsSync(LOCK)) fail(`LLM repo not found at ${src} and no model.lock.json. Set KINSHIP_SRC.`);
-  const lock = JSON.parse(await readFile(LOCK, 'utf8'));
-  await mkdir(path.join(web, 'model'), { recursive: true });
-  for (const [name, want] of Object.entries(lock.files)) {
-    const dest = path.join(web, name);
-    const have = existsSync(dest) ? await readFile(dest) : null;
-    if (have && have.length === want.bytes && sha256(have) === want.sha256) continue;
-    process.stdout.write(`sync-runtime: downloading ${path.basename(name)} (${(want.bytes / 1e6).toFixed(1)} MB)\n`);
-    const res = await fetch(lock.base + path.basename(name)).catch((e) => fail(`download failed: ${e.message}`));
-    if (!res.ok) fail(`download failed: ${lock.base}${path.basename(name)} (HTTP ${res.status})`);
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length !== want.bytes || sha256(buf) !== want.sha256) fail(`${name} downloaded but does not match model.lock.json`);
-    await writeFile(dest, buf);
+  // fresh clone: verify every committed file byte for byte
+  if (!existsSync(vendorManifest)) fail(`no LLM repo at ${src} and no vendor/kinship/manifest.json`);
+  const vm = JSON.parse(await readFile(vendorManifest, 'utf8'));
+  for (const [name, want] of Object.entries(vm.files)) {
+    const buf = await readFile(path.join(VENDOR, name)).catch(() => fail(`vendor/kinship/${name} is missing`));
+    if (buf.length !== want.bytes || sha256(buf) !== want.sha256) {
+      fail(`vendor/kinship/${name} is corrupted (size or SHA-256 differs from manifest.json). ` +
+        'Restore it with `git checkout -- vendor/kinship` or clone again; if you use Git LFS or line-ending filters, ' +
+        'make sure they are off for this folder (.gitattributes marks it binary).');
+    }
   }
-  manifest = Object.fromEntries(MODEL_FILES.map((n) => [`web/model/${n}`, lock.files[`model/${n}`]]));
+  manifest = Object.fromEntries(MODEL_FILES.map((n) => [`web/model/${n}`, vm.files[`model/${n}`]]));
 }
 
 // 1. integrity of the source model files
@@ -63,17 +60,20 @@ const runtime = {
 };
 for (const f of engines) runtime[f] = await readFile(path.join(web, f));
 
-// the LLM repo pins what a fresh clone downloads: rewrite model.lock.json when its files change
+// the LLM repo refreshes the committed copy in vendor/kinship/ (commit it after a model change)
 if (fromRepo) {
   const pinned = {};
-  for (const [f, buf] of Object.entries(runtime)) if (f !== 'worker.js' && f !== 'fflate.js') pinned[f] = { bytes: buf.length, sha256: sha256(buf) };
-  for (const [f, buf] of Object.entries(model)) pinned[`model/${f}`] = { bytes: buf.length, sha256: sha256(buf) };
-  const tag = `model-${sha256(JSON.stringify(pinned)).slice(0, 12)}`;
-  const lock = { release: tag, base: `https://github.com/ArAnirudh2901/Kinthread/releases/download/${tag}/`, files: pinned };
-  const text = `${JSON.stringify(lock, null, 2)}\n`;
-  if (!existsSync(LOCK) || (await readFile(LOCK, 'utf8')) !== text) {
-    await writeFile(LOCK, text);
-    console.log(`sync-runtime: model.lock.json updated (${tag}): publish it with npm run model:release`);
+  const copy = {};
+  for (const [f, buf] of Object.entries(runtime)) if (f !== 'worker.js' && f !== 'fflate.js') copy[f] = buf;
+  for (const [f, buf] of Object.entries(model)) copy[`model/${f}`] = buf;
+  for (const [f, buf] of Object.entries(copy)) pinned[f] = { bytes: buf.length, sha256: sha256(buf) };
+  const text = `${JSON.stringify({ note: 'SHA-256 of every file in this folder; checked by scripts/sync-runtime.mjs', files: pinned }, null, 2)}\n`;
+  if (!existsSync(vendorManifest) || (await readFile(vendorManifest, 'utf8')) !== text) {
+    await rm(VENDOR, { recursive: true, force: true });
+    await mkdir(path.join(VENDOR, 'model'), { recursive: true });
+    for (const [f, buf] of Object.entries(copy)) await writeFile(path.join(VENDOR, f), buf);
+    await writeFile(vendorManifest, text);
+    console.log('sync-runtime: vendor/kinship updated from the LLM repo: commit it');
   }
 }
 
