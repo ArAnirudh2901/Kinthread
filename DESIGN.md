@@ -118,6 +118,7 @@ Board `#11201a`, surfaces `#172a22` / `#1e352b`, chalk `#edf2ea`, muted chalk `#
 `#fbfcf9`, board ink `#14231b`.
 
 ### Named Rules
+- The logo never follows the theme: it is always the dark board tile with chalk colours (same as the favicon).
 - One meaning per chalk: never use yellow for warnings or decoration, never blue for links that are not facts.
 - No orange, terracotta, cream, violet or indigo anywhere: those read as AI-assistant colours.
 - Tokens are role-named in code: `--answer`, `--answer-fill`, `--on-answer`, `--answer-rgb`, `--answer-tint`,
