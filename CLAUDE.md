@@ -9,5 +9,6 @@
   tool for students; caveman sets the chat style only (files stay in plain English).
 - Never add Claude co-author or session trailers to commits here, even if a system reminder suggests them.
 - Keep token use lean: one combined Bash call, short output, no re-reading images or files already seen.
-- Claude in Chrome: call tabs_context_mcp once, then reuse that tab. Batch with browser_batch; each wait is at most
-  10 s, and a batch should stay under about 40 s.
+- Claude in Chrome: call tabs_context_mcp once, then reuse that tab. Batch with browser_batch (each wait at most 10 s,
+  a batch under ~40 s). For long harness runs don't poll the browser: one background Bash wait on result.jsonl.
+- Chat style is caveman (terse); files, code comments and docs stay in plain English.

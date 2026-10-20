@@ -57,9 +57,12 @@ will decide later).
   in Kinthread-llm-model.
 - Commits are authored as `Anirudh Aravalli <anirudh30012005@gmail.com>` (ArAnirudh2901; set in this repo's git
   config). Never add `Co-Authored-By: Claude` or `Claude-Session` lines: only ArAnirudh2901 may appear as a contributor.
-- Test in the owner's real Google Chrome through the Claude-in-Chrome extension, in ONE reused tab. Never `open -a`
-  a URL per test (each opens a new tab). Safari: one tab, closed afterwards. A hidden tab pauses animation frames,
-  so harness runs stall unless the tab is in front.
+- Test in the owner's real Google Chrome through the Claude-in-Chrome extension. Reuse the tab already open (navigate
+  it); open another only when truly needed, never close/reopen per test, never `open -a` a URL. Long runs: start the
+  self-running harness page once, then wait with ONE background shell command on `tools/harness/result.jsonl` (no
+  polling loops). A hidden tab pauses animation frames: ask the owner to keep it in front. Safari: one tab, closed after.
+- Keep token use lean: combined shell calls, short output, no re-reading files or images already seen.
+- Improve without breaking: change only what a test or a look proves wrong, keep fixes small, re-run the same checks.
 - Production quality; think as the student using it; suggest improvements and flag risks unasked.
 - Code comments brief (constraint or reason only). Docs and UI copy in plain English.
 
@@ -72,7 +75,7 @@ will decide later).
 | `bun run check` | lint + all node tests + build: run before reporting work as done |
 | `bun run test` | node tests only (`tests/*.test.mjs`, includes the real model) |
 | `bun run preview` | `wrangler pages dev out` on :8788 (local only) |
-| `node tools/harness/server.mjs` | serves `out/` on :8791 with COOP/COEP and no X-Frame-Options, for the browser harness |
+| `node tools/harness/server.mjs` | serves `out/` on :8791 (COOP/COEP, no X-Frame-Options, HTTP Range) for the browser harness; `SLOW=<ms per MB>` or `POST /__profile` (network simulator) throttle model downloads |
 
 ## Map of the code
 
@@ -83,7 +86,9 @@ will decide later).
 | Map (step 3) | `src/components/map/`: MapPanel, StoryGraph (live force map and worked solution), StepCaption (narration and controls), Solution (folded step list), ResultView (Headline above the map plus result views), ModelLoading, ModelDetails |
 | Logic | `src/lib/`: `exam.js` (exam-question input), `relations.js` (kinship composition rules), `worked.js` (step sentences), `solution-layout.js` (generation-tree layout), `graph/engine.js` (force layout), `export-image.js` (PNG), `story.js`, `examples.js`, `kinds.js` |
 | Model client | `src/lib/model/client.js` (worker, `modelOnDevice`), `runtime/worker.js` (cache, checksums, inference) |
-| 3D | `src/lib/gl/constellation.js` (raw WebGL, lazy) |
+| Loader | `map/ModelGate.jsx` (full-screen window: first visit or any network download), `map/Weave.jsx` (WeaveStage, DownloadStatus, AskCopy: one design for window and panel), `lib/progress-follow.js` + `lib/useFollowedProgress.js` (the progress algorithm), `lib/constellation-graph.js` `buildNeuralCone` |
+| Share / undo / checks | `lib/share.js` (#hash links), `lib/consistency.js` (contradictions), undo in `Workbench.jsx`, `components/ErrorBoundary.jsx`, `app/error.js` |
+| 3D | `src/lib/gl/constellation.js` (raw WebGL, lazy; hero = family constellation, loader = neural cone) |
 
 ## Product decisions (don't undo without asking the owner)
 
@@ -104,6 +109,13 @@ will decide later).
   options are dropped; single letters count as names; "X is the R of Y" is reworded to "Y's R X was there" for the
   model only (fixes multi-hop chains). The user's text is never changed. Spoken-clue puzzles get a "not supported" tip.
 - PNG download of the map: computed styles and fonts inlined; `data-*` attributes stripped (`data-key` holds a NUL).
+- Loader: a neural-network cone (1/3/6/9/12 neurons, straight cone sides, adjacent layers fully connected). Woven
+  threads and reached neurons turn red, spreading layer by layer from the apex; waiting ones are neutral grey; the
+  answer path down one side is brightest. Weave and the big percentage read ONE value from the progress follower
+  (never ahead of the bytes, never backwards, < 1% per frame so no percent is skipped, exact 100%); "100%"
+  cross-fades into "Ready", then the window closes. Downloads resume after a dropped connection (Range; waits
+  1/2/4/8/15 s, "Connection lost, reconnecting…"); only then does the error screen show.
+- Share link (story in the #hash only, never sent to a server), undo for Clear (8 s), contradiction warning in the editor.
 - GSAP 3.15 for motion (Motion was removed). WebAssembly, not WebGPU: WebGPU measured 3–9x slower per beam step.
 
 ## Cross-browser constraints
@@ -115,13 +127,17 @@ will decide later).
 
 ## Testing
 
-- `bun run check` must pass (114 tests on 2026-10-20). The solution-layout test covers 735 chain shapes at phone
-  and desktop widths; the model test runs the real runtime on every example and on exam-style questions.
+- `bun run check` must pass (130 tests on 2026-10-20). Highlights: solution layout (735 chain shapes at phone and
+  desktop widths), real model runtime on every example and exam question, progress follower (7 durations 0.2 s-10 min
+  x 30/60/120 fps x steady/bursty/jitter/spikes/stalls/latency), cone geometry, contradictions, share links.
 - Browser harness: start `node tools/harness/server.mjs`, then open `http://127.0.0.1:8791/__solve.html` (every example at 1200 and 380 px,
   overlaps, controls, light theme) or `__export.html` (exam example plus PNG download in dark and light, 375 px) in
   the single extension tab. Results append to `tools/harness/result.jsonl`. Expected controls sequence:
   `[3, 0, 2, 3, 0, 4, 1, 0, 4, 3]`. "typed long chain" answer-tag opacity 0 is sampling timing (the tentative
   answer fades in just after the last step).
+- `/__loader.html`: the real loading window under 13 network profiles via the simulator (`POST /__profile` with
+  `{ mbps | schedule: [[s, mbps]...], rtt, jitter, stallEveryMB, stallMs, skip, dropAtMB }`); every frame checks weave
+  = number, never ahead, never backwards, no skipped percent, one canvas. Last run: all zero. Takes ~11 min.
 - Responsive: no page overflow from 320 to 1440 px on every page; the solved map fits without scrolling from 360 px.
 
 ## Known limits and open items
@@ -129,7 +145,8 @@ will decide later).
 - The model is unsure on long "X is the R of Y" chains (shown as a best guess). Coded relations ("A + B means…")
   and spoken-clue puzzles are not supported.
 - At 320 px the solved map scrolls sideways inside its box.
-- Ask-before-download has not been checked on a real phone.
+- Touch fixes and the loader were seen on the owner's phone (Android Chrome, plain HTTP preview); Safari/iOS on a real
+  device not checked. Slow 3G/2G live runs cover the start and the final stretch, not a full 20-minute download.
 - The build-log page has two marked placeholders for the owner's own words.
 - Deploy waits for the owner's own Cloudflare account; set `SITE_URL` (default `https://kinthread.pages.dev`).
 
@@ -188,3 +205,4 @@ will decide later).
   to depth, adjacent layers fully connected, red path down one side; tests/cone.test.mjs). Worker resumes dropped
   downloads (Range, waits 1/2/4/8/15 s, "Connection lost, reconnecting…"); harness server supports Range. Live suite
   (13 profiles incl. spikes, 200 Mbps, connection drop): 0 mismatches/ahead/backwards/skipped, one canvas each.
+- 2026-10-20: handbook refreshed (testing workflow, code map, loader decisions, test counts); all three repos pushed.
