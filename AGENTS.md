@@ -146,3 +146,7 @@ will decide later).
   `:hover` gated behind `(hover: hover) and (pointer: fine)`, transparent tap highlight, no text selection on controls,
   16px minimum input font, theme-color follows the page theme, hero 3D camera fitted to the canvas aspect (graph never
   clipped), no row labels in the compact map layout, full-name `<title>` on truncated map names.
+- 2026-10-20: map no longer "refreshes": an edited story keeps its last answer on screen, dimmed under the stale
+  banner, with no replay until Solve; live mode clears inline styles a worked-answer timeline left (a person could
+  stay hidden). Hero spin decays and its light fades, then the render loop sleeps (0 rAF at rest); pointer wakes it.
+  Press feedback on every control.
