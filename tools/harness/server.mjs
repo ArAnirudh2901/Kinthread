@@ -9,6 +9,7 @@ import path from 'node:path';
 const here = path.dirname(new URL(import.meta.url).pathname);
 const root = path.resolve(process.argv[2] || path.join(here, '../../out'));
 const port = +process.argv[3] || 8791;
+const slow = +process.env.SLOW || 0;   // ms per MB for model parts (/m/): mimics a phone connection
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.txt': 'text/plain', '.gz': 'application/octet-stream' };
 
 createServer(async (req, res) => {
@@ -27,7 +28,11 @@ createServer(async (req, res) => {
   if (!p.startsWith(root) && !p.startsWith(here)) { res.writeHead(403, h).end(); return; }
   try {
     if ((await stat(p)).isDirectory()) p = path.join(p, 'index.html');
-    res.writeHead(200, { ...h, 'Content-Type': types[path.extname(p)] || 'application/octet-stream' }).end(await readFile(p));
+    const buf = await readFile(p);
+    res.writeHead(200, { ...h, 'Content-Type': types[path.extname(p)] || 'application/octet-stream', 'Content-Length': buf.length });
+    if (!slow || !url.pathname.startsWith('/m/')) { res.end(buf); return; }
+    for (let i = 0; i < buf.length; i += 1 << 20) { res.write(buf.subarray(i, i + (1 << 20))); await new Promise((r) => setTimeout(r, slow)); }
+    res.end();
   } catch {
     res.writeHead(404, h).end('not found');
   }

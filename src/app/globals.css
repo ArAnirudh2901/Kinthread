@@ -144,3 +144,6 @@ p, li { text-wrap: pretty; }
 @media (prefers-contrast: more) {
   :root, :root[data-theme="light"] { --line: var(--line-strong); --text-2: var(--ink); }
 }
+
+/* an open window holds the page still behind it */
+html:has(dialog[open]) { overflow: hidden; }

@@ -32,14 +32,14 @@ void main() {
   v_color = vec4(a_color.rgb, a_color.a * fog);
 }`;
 // premultiplied output: the canvas is transparent and composited over the page in either theme
-const LINE_FS = `precision mediump float; varying vec4 v_color; void main() { gl_FragColor = vec4(v_color.rgb * v_color.a, v_color.a); }`;
-const POINT_FS = `precision mediump float; varying vec4 v_color;
+const LINE_FS = `precision mediump float; varying vec4 v_color; uniform float u_alpha; void main() { gl_FragColor = vec4(v_color.rgb * v_color.a, v_color.a) * u_alpha; }`;
+const POINT_FS = `precision mediump float; varying vec4 v_color; uniform float u_alpha;
 void main() {
   float d = length(gl_PointCoord - 0.5);
   float a = smoothstep(0.5, 0.36, d) + smoothstep(0.5, 0.0, d) * 0.35;
   if (a < 0.02) discard;
   float o = v_color.a * min(a, 1.0);
-  gl_FragColor = vec4(v_color.rgb * o, o);
+  gl_FragColor = vec4(v_color.rgb * o, o) * u_alpha;
 }`;
 
 const hex = (h, a = 1) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255, a];
@@ -115,7 +115,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     point = { prog: compile(gl, POINT_VS, POINT_FS) };
     for (const [p, names] of [[line, ['a_pos', 'a_other', 'a_side', 'a_color', 'a_width']], [point, ['a_pos', 'a_color', 'a_size']]]) {
       p.attr = Object.fromEntries(names.map((n) => [n, gl.getAttribLocation(p.prog, n)]));
-      p.uni = Object.fromEntries(['u_mvp', 'u_half', 'u_dpr', 'u_fog'].map((n) => [n, gl.getUniformLocation(p.prog, n)]));
+      p.uni = Object.fromEntries(['u_mvp', 'u_half', 'u_dpr', 'u_fog', 'u_alpha'].map((n) => [n, gl.getUniformLocation(p.prog, n)]));
     }
     buf.lv = gl.createBuffer();
     buf.li = gl.createBuffer();
@@ -185,7 +185,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     // distance at which the turning family stays inside the narrower of the two fields of view, at every aspect ratio
     const aspect = canvas.width / canvas.height;
     const half = Math.atan(Math.min(Math.tan(FOVY / 2), Math.tan(FOVY / 2) * aspect));
-    const dist = radius / Math.sin(half * FILL);
+    const dist = radius / Math.sin(half * (variant === 'weave' ? 0.96 : FILL));   // the loader is the whole stage
     const mvp = mul(mat4Perspective(FOVY, aspect, 0.1, dist + radius + 2), modelView(yaw, pitch, dist));
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 0);
@@ -208,6 +208,13 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     gl.uniform1f(line.uni.u_dpr, dpr);
     gl.uniform2f(line.uni.u_fog, dist - radius * 0.7, dist + radius * 0.8);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.li);
+    // weave: the whole family is there from the start, faint; threads come to full strength as the model arrives
+    const ghost = variant === 'weave' && progress < 1;
+    if (ghost && shownEdges < edges.length) {
+      gl.uniform1f(line.uni.u_alpha, 0.34);
+      gl.drawElements(gl.TRIANGLES, (edges.length - shownEdges) * 6, gl.UNSIGNED_SHORT, shownEdges * 6 * 2);
+    }
+    gl.uniform1f(line.uni.u_alpha, 1);
     if (shownEdges) gl.drawElements(gl.TRIANGLES, shownEdges * 6, gl.UNSIGNED_SHORT, 0);
     // the next thread grows from its first person toward the second instead of appearing whole
     let tip = null;
@@ -230,6 +237,11 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     gl.uniformMatrix4fv(point.uni.u_mvp, false, mvp);
     gl.uniform1f(point.uni.u_dpr, dpr);
     gl.uniform2f(point.uni.u_fog, dist - radius * 0.7, dist + radius * 0.8);
+    if (ghost && shownNodes < nodes.length) {
+      gl.uniform1f(point.uni.u_alpha, 0.45);
+      gl.drawArrays(gl.POINTS, shownNodes, nodes.length - shownNodes);
+    }
+    gl.uniform1f(point.uni.u_alpha, 1);
     if (shownNodes) gl.drawArrays(gl.POINTS, 0, shownNodes);
 
     // pulses: light travelling down the lit thread (hero) or at the newest thread (weave)

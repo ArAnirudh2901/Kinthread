@@ -16,9 +16,9 @@ export default function Mark({ size = 28, animate = 'none', title, className }) 
       focusable="false"
     >
       <g fill="none" strokeWidth="1.9" strokeLinecap="round">
-        <path pathLength="1" style={{ '--i': 0 }} stroke="currentColor" d="M11 4.6C10.1 11.2 11.9 19.4 11 27.4" />
-        <path pathLength="1" style={{ '--i': 1 }} stroke="var(--answer)" strokeWidth="2.3" d="M11.3 15.3C15.6 13.9 19 10.2 23.4 6.2" />
-        <path pathLength="1" style={{ '--i': 2 }} stroke="currentColor" d="M11.3 15.3C16 16.9 19.7 21.3 23.8 26.2" />
+        <path data-thread="" pathLength="1" style={{ '--i': 0 }} stroke="currentColor" d="M11 4.6C10.1 11.2 11.9 19.4 11 27.4" />
+        <path data-thread="" pathLength="1" style={{ '--i': 1 }} stroke="var(--answer)" strokeWidth="2.3" d="M11.3 15.3C15.6 13.9 19 10.2 23.4 6.2" />
+        <path data-thread="" pathLength="1" style={{ '--i': 2 }} stroke="currentColor" d="M11.3 15.3C16 16.9 19.7 21.3 23.8 26.2" />
       </g>
       {/* the map's own parts: facts in gold (square, circle), the question's diamond in indigo, the answer on the red thread */}
       <g stroke="var(--node-stroke)" strokeWidth="1.3">

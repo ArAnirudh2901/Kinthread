@@ -160,3 +160,7 @@ will decide later).
   now scroll sideways with a faded edge.
 - 2026-10-20: loading weave eases toward the download progress and grows each thread from person to person (no
   sudden edges); first-visit window (`ModelGate`) replaces the phone-only prompt.
+- 2026-10-20: model window redesigned: full-screen on phones, large panel on desktop; wordmark top-centre; the whole
+  family shows faint and weaves in as bytes arrive (weave fills the stage); large tabular percentage + "Downloading the
+  model"; shows "Ready" then closes (first-visit flag latched per page load). Mark: only threads animate (diamond was
+  dashed). Harness: `SLOW=<ms per MB>` throttles model parts to see loading locally.
