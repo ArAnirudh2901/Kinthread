@@ -138,7 +138,7 @@ src/
     graph/engine.js       force layout for the live map (one GSAP ticker callback)
     export-image.js       map to PNG, with fonts and styles inlined
     gl/constellation.js   hero 3D scene in raw WebGL
-    model/client.js       talks to the worker; asks before the download on phones and data saver
+    model/client.js       talks to the worker; asks before the first download (window: `map/ModelGate.jsx`)
 runtime/
   worker.js               inference worker: model cache, checksums, both models
   sw.js                   service worker template (offline shell)
@@ -192,8 +192,8 @@ The build already handles:
 
 - About **26 ms per question** on an Apple M2 in Chrome (relaxed SIMD, 4 threads). The matrix-multiply tiles and the
   thread count are tuned on each device when the model loads.
-- **One-time download** of 63.9 MB; later visits load from the device in about a second. Phones and data-saver
-  connections are asked before the download starts.
+- **One-time download** of 63.9 MB; later visits load from the device in about a second. A first visit opens a window that
+  asks before the download and shows its progress; returning visitors load straight from the device.
 - **WebAssembly, not WebGPU:** `tools/bench-webgpu.html` runs the model's real per-step workload both ways. On an
   M2, a WebGPU step took 5–17 ms against 1.6–1.9 ms for WebAssembly, plus about 0.9 s of GPU setup, because beam
   search reads results back after every small step.

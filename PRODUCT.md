@@ -21,8 +21,8 @@ tagger) and run entirely in the browser via WebAssembly: no server, no account, 
 shown, not hidden, and fixed kinship rules re-check it.
 
 ## Operating Context
-Used beside homework or exam practice, on phones and laptops. First visit downloads the model once (63.9 MB; phones and
-data-saver connections are asked first), then it works offline.
+Used beside homework or exam practice, on phones and laptops. First visit downloads the model once (61 MB; a window asks first and
+shows progress), then it works offline.
 
 ## Capabilities and Constraints
 - English stories with named people, third person, up to about 280 words; 18 relationships; best on 2–4 step chains.

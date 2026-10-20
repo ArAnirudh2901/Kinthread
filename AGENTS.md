@@ -82,7 +82,7 @@ will decide later).
 | Workbench (steps 1–2) | `src/components/workbench/`: StoryEditor, Examples, PeoplePicker (question with two blanks), TraceBar (Solve button), Workbench (state wiring), `state.js` reducer |
 | Map (step 3) | `src/components/map/`: MapPanel, StoryGraph (live force map and worked solution), StepCaption (narration and controls), Solution (folded step list), ResultView (Headline above the map plus result views), ModelLoading, ModelDetails |
 | Logic | `src/lib/`: `exam.js` (exam-question input), `relations.js` (kinship composition rules), `worked.js` (step sentences), `solution-layout.js` (generation-tree layout), `graph/engine.js` (force layout), `export-image.js` (PNG), `story.js`, `examples.js`, `kinds.js` |
-| Model client | `src/lib/model/client.js` (worker, `askBeforeDownload`), `runtime/worker.js` (cache, checksums, inference) |
+| Model client | `src/lib/model/client.js` (worker, `modelOnDevice`), `runtime/worker.js` (cache, checksums, inference) |
 | 3D | `src/lib/gl/constellation.js` (raw WebGL, lazy) |
 
 ## Product decisions (don't undo without asking the owner)
@@ -98,7 +98,8 @@ will decide later).
   Download. The full step list is folded. The last caption shows the working ("Victor's father's wife's daughter is
   Victor's sister").
 - Jargon (engine, agreement, timings, tokens) only inside "Model details".
-- Phones and data-saver connections ask before the one-time 63.9 MB download; desktops start automatically.
+- First visit: a window (`ModelGate`, native `<dialog>`) asks before the one-time model download, shows progress and
+  closes itself when ready; returning visitors (`modelOnDevice()`) start silently.
 - Exam input (`exam.js`): the pasted question is detected, filled in and removed from what the model reads; answer
   options are dropped; single letters count as names; "X is the R of Y" is reworded to "Y's R X was there" for the
   model only (fixes multi-hop chains). The user's text is never changed. Spoken-clue puzzles get a "not supported" tip.
@@ -157,3 +158,5 @@ will decide later).
   `plans/` (all DONE); dev-only worst-case toggle (`?data=worst|exam|one|many|long|empty`, `src/lib/fixtures.dev.js`,
   excluded from production); fixed maps being squeezed below readable scale on phones (`max-width` on the SVG): they
   now scroll sideways with a faded edge.
+- 2026-10-20: loading weave eases toward the download progress and grows each thread from person to person (no
+  sudden edges); first-visit window (`ModelGate`) replaces the phone-only prompt.

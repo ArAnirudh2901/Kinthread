@@ -117,16 +117,10 @@ function capability() {
 
 const SEEN = 'kinthread-model';
 
-/**
- * Phones and data-saver connections ask before the one-time download (tens of MB on mobile data);
- * a device that already holds this model version never asks.
- */
-export function askBeforeDownload() {
+/** True when this device already finished loading this model version (it starts quietly); otherwise the visitor is asked first. */
+export function modelOnDevice() {
   if (typeof window === 'undefined') return false;
-  try { if (localStorage.getItem(SEEN) === RUNTIME.model.base) return false; } catch { /* storage blocked */ }
-  const c = navigator.connection;
-  const metered = !!c && (c.saveData || c.type === 'cellular' || /2g$/.test(c.effectiveType || ''));
-  return metered || matchMedia('(pointer: coarse)').matches;
+  try { return localStorage.getItem(SEEN) === RUNTIME.model.base; } catch { return false; }
 }
 
 /** Starts the worker and model download once. Later calls do nothing while it is loading or ready. */

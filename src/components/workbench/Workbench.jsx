@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { askBeforeDownload, askModel, detectPeople, startModel } from '@/lib/model/client';
+import { askModel, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
 import { useModel } from '@/lib/model/useModel';
 import { announce } from '@/lib/kinds';
 import { EXAMPLES } from '@/lib/examples';
@@ -8,6 +8,7 @@ import { prepare, splitQuestion } from '@/lib/exam';
 import { MAX_PEOPLE, WORD_LIMIT, countWords } from '@/lib/story';
 import MapPanel from '@/components/map/MapPanel';
 import DevData from './DevData';
+import ModelGate from '@/components/map/ModelGate';
 import Examples from './Examples';
 import PeoplePicker from './PeoplePicker';
 import StoryEditor from './StoryEditor';
@@ -26,7 +27,8 @@ export default function Workbench() {
   const pickerRef = useRef(null);
   const mapRef = useRef(null);
 
-  useEffect(() => { if (!askBeforeDownload()) startModel(); }, []);
+  // returning visitors start at once; a first visit asks first (ModelGate)
+  useEffect(() => { if (modelOnDevice()) startModel(); }, []);
 
   // the hero's "Try an example" button
   useEffect(() => {
@@ -119,6 +121,7 @@ export default function Workbench() {
 
   return (
     <section className={`container ${s.bench}`} aria-label="Workbench" id="workbench">
+      <ModelGate />
       <div className={s.inputs}>
         <StoryEditor
           ref={editorRef}

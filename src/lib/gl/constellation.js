@@ -97,7 +97,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   const pathNodes = new Set([graph.top, ...path.map((e) => edges[e].b)]);
   let C = PALETTES[themeNow()];
   let gl, line, point, buf = {};
-  let progress = variant === 'weave' ? 0 : 1;
+  let progress = variant === 'weave' ? 0 : 1, target = progress, lastDraw = 0;   // shown progress eases toward the download's
   let running = false, visible = true, raf = 0, last = 0, lost = false;
   const t0 = performance.now();
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -120,6 +120,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     buf.lv = gl.createBuffer();
     buf.li = gl.createBuffer();
     buf.pv = gl.createBuffer();
+    buf.grow = gl.createBuffer();   // the one thread being drawn right now
     buf.pulse = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf.pulse); gl.bufferData(gl.ARRAY_BUFFER, 8 * 8 * 4, gl.DYNAMIC_DRAW);
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
@@ -190,7 +191,15 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const shownEdges = Math.round(progress * edges.length);
+    // download progress lands in big steps (16 MB parts): glide toward it, so threads are drawn one by one
+    if (variant === 'weave') {
+      const dt = Math.min(0.1, lastDraw ? (now - lastDraw) / 1000 : 0);
+      progress += (target - progress) * Math.min(1, dt * 2.2);
+      if (target >= 1 && progress > 0.999) progress = 1;
+    }
+    lastDraw = now;
+    const shownEdges = Math.floor(progress * edges.length + 1e-6);
+    const grow = variant === 'weave' ? progress * edges.length - shownEdges : 0;
     bind(line, 12, [['a_pos', 3], ['a_other', 3], ['a_side', 1], ['a_color', 4], ['a_width', 1]]);
     gl.bindBuffer(gl.ARRAY_BUFFER, buf.lv);
     bind(line, 12, [['a_pos', 3], ['a_other', 3], ['a_side', 1], ['a_color', 4], ['a_width', 1]]);
@@ -200,6 +209,19 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     gl.uniform2f(line.uni.u_fog, dist - radius * 0.7, dist + radius * 0.8);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.li);
     if (shownEdges) gl.drawElements(gl.TRIANGLES, shownEdges * 6, gl.UNSIGNED_SHORT, 0);
+    // the next thread grows from its first person toward the second instead of appearing whole
+    let tip = null;
+    if (grow > 0.001 && shownEdges < edges.length) {
+      const k = shownEdges, e = edges[k], A = nodes[e.a], B = nodes[e.b], f = 1 - (1 - grow) ** 2;
+      tip = { x: A.x + (B.x - A.x) * f, y: A.y + (B.y - A.y) * f, z: A.z + (B.z - A.z) * f };
+      const col = onPath.has(k) ? C.lit : e.kind === 'spouse' ? C.spouse : C.thread, w = onPath.has(k) ? 2.4 : 1.1;
+      const gv = new Float32Array(48);
+      [[A, tip, 1], [A, tip, -1], [tip, A, -1], [tip, A, 1]].forEach(([p, q, sd], j) => gv.set([p.x, p.y, p.z, q.x, q.y, q.z, sd, ...col, w], j * 12));
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf.grow);
+      gl.bufferData(gl.ARRAY_BUFFER, gv, gl.DYNAMIC_DRAW);
+      bind(line, 12, [['a_pos', 3], ['a_other', 3], ['a_side', 1], ['a_color', 4], ['a_width', 1]]);
+      gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);   // indices 0-3 of the shared index buffer
+    }
     disable(line);
 
     const shownNodes = progress >= 1 ? nodes.length : nodeOrder.filter((i) => firstEdge[i] < shownEdges).length;
@@ -220,9 +242,8 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
           const A = nodes[e.a], B = nodes[e.b];
           pulses.push([A.x + (B.x - A.x) * f, A.y + (B.y - A.y) * f, A.z + (B.z - A.z) * f]);
         }
-      } else if (shownEdges > 0 && shownEdges < edges.length) {
-        const e = edges[shownEdges - 1], f = (t * 1.6) % 1, A = nodes[e.a], B = nodes[e.b];
-        pulses.push([A.x + (B.x - A.x) * f, A.y + (B.y - A.y) * f, A.z + (B.z - A.z) * f]);
+      } else if (tip) {
+        pulses.push([tip.x, tip.y, tip.z]);   // a light at the tip of the thread being drawn
       }
     }
     if (pulses.length) {
@@ -286,7 +307,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   start();
 
   return {
-    setProgress(p) { progress = Math.max(0, Math.min(1, p)); if (!running) draw(performance.now()); },
+    setProgress(p) { target = Math.max(target, Math.min(1, p)); if (!running) draw(performance.now()); },
     destroy() {
       stop();
       io?.disconnect();
