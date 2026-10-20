@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Mark from '@/components/brand/Mark';
 import { modelOnDevice, retryModel, startModel } from '@/lib/model/client';
+import { useFollowedProgress } from '@/lib/useFollowedProgress';
 import { useModel } from '@/lib/model/useModel';
 import { AskCopy, DownloadStatus, WeaveStage, downloadPct, weaveStyles as w } from './Weave';
 import s from './ModelGate.module.css';
@@ -43,7 +44,8 @@ export default function ModelGate() {
   const busy = model.status === 'starting' || model.status === 'loading';
   const ready = model.status === 'ready';
   const state = ready && woven ? 'ready' : model.status === 'error' ? 'error' : busy || ready ? 'busy' : 'ask';   // ready but still weaving: keep counting
-  const progress = ready ? 1 : busy ? downloadPct(model) / 100 : 0;   // 0: the whole family, faint, waiting
+  // one value drives the weave and the number: the download, followed smoothly (never ahead, never backwards)
+  const progress = useFollowedProgress(ready ? 1 : busy ? downloadPct(model) / 100 : 0);
 
   return (
     <dialog ref={ref} className={s.gate} data-state={state} aria-labelledby="gate-title" onCancel={(e) => { e.preventDefault(); close(); }}>
@@ -51,7 +53,7 @@ export default function ModelGate() {
       {open && (
         <WeaveStage progress={progress} onWoven={() => setWoven(true)}>
           {state === 'ask' && <AskCopy total={model.total} onStart={() => startModel()} onLater={close} />}
-          {(state === 'busy' || state === 'ready') && <DownloadStatus model={model} onHide={close} woven={woven} />}
+          {(state === 'busy' || state === 'ready') && <DownloadStatus model={model} shown={progress} onHide={close} woven={woven} />}
           {state === 'error' && (
             <>
               <h2 className={w.title}>The model couldn&rsquo;t load.</h2>

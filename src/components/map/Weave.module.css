@@ -15,7 +15,8 @@
   letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--ink);
 }
 .count span { font-size: 0.45em; margin-left: 0.06em; color: var(--text-2); letter-spacing: 0; }
-.count[data-ready] { color: var(--answer); }
+.count[data-ready] { color: var(--answer); animation: ready-in 420ms var(--ease); }
+@keyframes ready-in { from { opacity: 0; transform: translateY(6px) scale(0.98); filter: blur(4px); } }
 .label { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.005em; }
 .detail { margin: 0; color: var(--text-2); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }

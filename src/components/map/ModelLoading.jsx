@@ -1,6 +1,7 @@
 'use client';
 import Mark from '@/components/brand/Mark';
 import { startModel } from '@/lib/model/client';
+import { useFollowedProgress } from '@/lib/useFollowedProgress';
 import { AskCopy, DownloadStatus, WeaveStage } from './Weave';
 import s from './ModelLoading.module.css';
 
@@ -40,7 +41,7 @@ export default function ModelLoading({ model }) {
   // downloading: the same design as the loading window
   return (
     <div className={s.panel}>
-      <WeaveStage progress={step === 2 ? 1 : pct / 100}><DownloadStatus model={model} /></WeaveStage>
+      <FollowedWeave model={model} raw={step === 2 ? 1 : pct / 100} />
       {model.slow && (
         <p className={s.slow} role="status">
           This is taking longer than usual. A slow connection is the most likely cause; it will keep going.
@@ -48,6 +49,12 @@ export default function ModelLoading({ model }) {
       )}
     </div>
   );
+}
+
+// the panel version of the loading window's stage: same followed value for the weave and the number
+function FollowedWeave({ model, raw }) {
+  const shown = useFollowedProgress(raw);
+  return <WeaveStage progress={shown}><DownloadStatus model={model} shown={shown} /></WeaveStage>;
 }
 
 function Bar({ pct, determinate, label }) {

@@ -178,3 +178,6 @@ will decide later).
   before paint); verified: weave 1.000 when the download completes, never steps back, one canvas instance (no reload).
 - 2026-10-20: loader weave colours: woven threads and reached people turn red (a red network grows from the first
   person); threads still to come are neutral grey (`buf.lg`/`buf.pg`); the answer path stays brightest and thickest.
+- 2026-10-20: loader progress algorithm `lib/progress-follow.js` (critically damped follower of bytes/total: never
+  ahead, never backwards, smooth, exact 100%), one value for weave and number (`useFollowedProgress`), "100%"
+  cross-fades into "Ready"; property tests `tests/progress-follow.test.mjs`; live check: 496 frames, 0 mismatches.

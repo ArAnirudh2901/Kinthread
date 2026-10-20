@@ -17,16 +17,18 @@ export function WeaveStage({ progress, children, className, onWoven }) {
 export const downloadPct = (model) =>
   model.status === 'ready' ? 100 : model.total ? Math.min(100, (100 * model.loaded) / model.total) : 0;
 
-export function DownloadStatus({ model, onHide, woven = true }) {
+// `shown` is the followed progress (useFollowedProgress): the same value the weave draws, so number and picture agree
+export function DownloadStatus({ model, shown, onHide, woven = true }) {
   // "Ready" only once the picture is complete too, so the words never run ahead of the weave
-  const ready = model.status === 'ready' && woven;
-  const pct = downloadPct(model);
+  const ready = model.status === 'ready' && woven && shown >= 1;
+  const pct = 100 * shown;
   const label = ready ? 'The model is on this device' : model.stage === 'init' ? 'Checking the model' : 'Downloading the model';
   const detail = ready ? 'Kinthread works offline from here on.'
     : model.total ? `${mb(model.loaded)} of ${mbText(model.total)} · once, then it loads from this device` : 'Starting…';
   return (
     <>
-      <p className={s.count} data-ready={ready || undefined} aria-hidden="true">{ready ? 'Ready' : <>{Math.floor(pct)}<span>%</span></>}</p>
+      {/* keyed: "100%" cross-fades into "Ready" instead of being swapped */}
+      <p key={ready ? 'ready' : 'count'} className={s.count} data-ready={ready || undefined} aria-hidden="true">{ready ? 'Ready' : <>{Math.floor(pct)}<span>%</span></>}</p>
       <p className={s.label} aria-live="polite">{label}</p>
       <p className={s.detail}>{detail}</p>
       <span className="visually-hidden" role="progressbar" aria-label="Model download" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} />
