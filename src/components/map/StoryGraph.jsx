@@ -275,7 +275,6 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
                 {plan.w >= 420 && lay.rows.length > 1 && lay.rows.map((r) => (
                   <g key={r.gen} className={s.genRow}>
                     <line x1={0} x2={plan.w} y1={r.y - lay.shift} y2={r.y - lay.shift} />
-                    <text x={4} y={r.y - lay.shift - 24}>{generationName(r.gen, personLabel(view.nodes[0]))}</text>
                   </g>
                 ))}
                 {lay.answer && (
@@ -312,6 +311,12 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
                   </g>
                 )}
                 {view.variant === 'none' && <NoLink layout={lay} />}
+              </g>
+            )}
+            {/* row names drawn over the arrows, with a halo, so an arc passing by never cuts through them */}
+            {view && lay && plan.w >= 420 && lay.rows.length > 1 && (
+              <g className={s.genLabels} transform={`translate(0 ${lay.shift})`} aria-hidden="true">
+                {lay.rows.map((r) => <text key={r.gen} x={4} y={r.y - lay.shift - 24}>{generationName(r.gen, personLabel(view.nodes[0]))}</text>)}
               </g>
             )}
 

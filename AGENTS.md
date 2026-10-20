@@ -27,11 +27,14 @@ kinship.js, six WASM builds, model files; see that repo's AGENTS.md). `npm run s
 
 ## Owner's hard rules
 
-- Never deploy, with wrangler or any host. Wrangler on this Mac is logged into someone else's Cloudflare account.
+- Never deploy from an agent session, with wrangler or any host: the owner deploys from their own account.
   Local `npm run preview` is fine; give the owner the deploy commands instead (README).
-- Commit only when asked; never push unless asked. The site is its own git repo (`~/Web_Dev/kinthread`, branch
-  `main`); the owner will create the GitHub remote. It is hidden from the parent `~/Web_Dev` repo (the owner's other
+- Commit only when asked; never push unless asked. Repo: https://github.com/ArAnirudh2901/Kinthread (public,
+  Apache-2.0, branch `main`), checked out at `~/Web_Dev/kinthread`. It is hidden from the parent `~/Web_Dev` repo (the owner's other
   projects) through `~/Web_Dev/.git/info/exclude`: never commit Kinthread into `~/Web_Dev`.
+- Before any `gh` command or push, run `gh auth status`: only act as the owner's account (ArAnirudh2901). If another
+  account is active, authenticate that one command with the owner's token or ask the owner to switch; don't switch
+  accounts for them.
 - No quantization, no smaller or distilled model: exact fp32 weights. Don't push weights.
 - Test in the owner's real Google Chrome through the Claude-in-Chrome extension, in ONE reused tab. Never `open -a`
   a URL per test (each opens a new tab). Safari: one tab, closed afterwards. A hidden tab pauses animation frames,
@@ -114,4 +117,4 @@ kinship.js, six WASM builds, model files; see that repo's AGENTS.md). `npm run s
   benchmarked, Chrome and Safari tested.
 - 2026-10-20: worked-solution map (relations rules, generation layout, step playback), phone fit, PNG download,
   responsive sweep, renamed to Kinthread, UX simplification for students, exam-question input, harness moved to
-  `tools/harness/`.
+  `tools/harness/`. Published to GitHub (README with map images, model tests skip on a fresh clone).

@@ -70,7 +70,7 @@
 
 /* worked answer: copper = the question, teal = facts from the story, lime = the answer */
 .genRow line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 6; }
-.genRow text { font: 500 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--text-2); }
+.genLabels text { font: 500 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--text-2); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
 .qLine { fill: none; stroke: var(--copper); stroke-width: 1.8; stroke-dasharray: 6 6; stroke-linecap: round; }
 .question circle { fill: var(--surface); stroke: var(--copper); stroke-width: 1.8; }
 .question text { font: 700 14px/1 var(--font-ui); fill: var(--copper-ink); }
