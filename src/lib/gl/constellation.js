@@ -48,7 +48,8 @@ const PALETTES = {
   dark: { thread: hex('#a8b8b3', 0.16), spouse: hex('#79c8b7', 0.22), lit: hex('#d8f36a', 0.9), sea: hex('#79c8b7', 0.95), copper: hex('#e39773', 1), lichen: hex('#d8f36a', 1), pulse: hex('#f4ffd0', 1), additive: true },
   light: { thread: hex('#17252a', 0.13), spouse: hex('#2b6e60', 0.28), lit: hex('#17252a', 0.8), sea: hex('#2b6e60', 0.9), copper: hex('#c86e4b', 1), lichen: hex('#7d9a14', 1), pulse: hex('#c86e4b', 1), additive: false },
 };
-const DIST = 4.4;   // camera distance: the whole family fits with a margin
+const FOVY = 0.62;
+const FILL = 0.8;   // share of the narrower half field of view the family may use (the rest is margin)
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 function mat4Perspective(fovy, aspect, near, far) {
@@ -85,6 +86,10 @@ function compile(gl, vs, fs) {
 export function createConstellation(canvas, { variant = 'hero', lite = false, still = false } = {}) {
   const graph = buildConstellation({ lite });
   const { nodes, edges, path } = graph;
+  // centre the family on its middle, and measure the sphere it turns in, so the camera can fit any canvas shape
+  const mid = ['x', 'y', 'z'].map((k) => (Math.min(...nodes.map((n) => n[k])) + Math.max(...nodes.map((n) => n[k]))) / 2);
+  for (const n of nodes) { n.x -= mid[0]; n.y -= mid[1]; n.z -= mid[2]; }
+  const radius = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y, n.z))) + 0.05;
   const onPath = new Set(path);
   const pathNodes = new Set([graph.top, ...path.map((e) => edges[e].b)]);
   let C = PALETTES[themeNow()];
@@ -172,7 +177,11 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     pointer.y += (pointer.ty - pointer.y) * 0.06;
     const yaw = (still ? 0.6 : 0.6 + t * 0.07) + pointer.x * 0.35;
     const pitch = 0.3 + pointer.y * 0.12;
-    const mvp = mul(mat4Perspective(0.62, canvas.width / canvas.height, 0.1, 10), modelView(yaw, pitch, DIST));
+    // distance at which the turning family stays inside the narrower of the two fields of view, at every aspect ratio
+    const aspect = canvas.width / canvas.height;
+    const half = Math.atan(Math.min(Math.tan(FOVY / 2), Math.tan(FOVY / 2) * aspect));
+    const dist = radius / Math.sin(half * FILL);
+    const mvp = mul(mat4Perspective(FOVY, aspect, 0.1, dist + radius + 2), modelView(yaw, pitch, dist));
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -184,7 +193,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     gl.uniformMatrix4fv(line.uni.u_mvp, false, mvp);
     gl.uniform2f(line.uni.u_half, canvas.width / 2, canvas.height / 2);
     gl.uniform1f(line.uni.u_dpr, dpr);
-    gl.uniform2f(line.uni.u_fog, DIST - 1, DIST + 1.1);
+    gl.uniform2f(line.uni.u_fog, dist - radius * 0.7, dist + radius * 0.8);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.li);
     if (shownEdges) gl.drawElements(gl.TRIANGLES, shownEdges * 6, gl.UNSIGNED_SHORT, 0);
     disable(line);
@@ -194,7 +203,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     bind(point, 8, [['a_pos', 3], ['a_color', 4], ['a_size', 1]]);
     gl.uniformMatrix4fv(point.uni.u_mvp, false, mvp);
     gl.uniform1f(point.uni.u_dpr, dpr);
-    gl.uniform2f(point.uni.u_fog, DIST - 1, DIST + 1.1);
+    gl.uniform2f(point.uni.u_fog, dist - radius * 0.7, dist + radius * 0.8);
     if (shownNodes) gl.drawArrays(gl.POINTS, 0, shownNodes);
 
     // pulses: light travelling down the lit thread (hero) or at the newest thread (weave)

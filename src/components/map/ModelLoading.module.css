@@ -38,5 +38,5 @@
   min-height: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--lichen); color: #17252a;
   font-weight: 650; font-size: 1rem; transition: transform 0.12s var(--ease), filter var(--t-fast) var(--ease);
 }
-.start:hover { filter: brightness(1.05); }
+@media (hover: hover) and (pointer: fine) { .start:hover { filter: brightness(1.05); } }
 .start:active { transform: scale(0.96); }

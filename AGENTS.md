@@ -142,3 +142,7 @@ will decide later).
 - 2026-10-20: final model committed in `vendor/kinship/` (binary, SHA-256 manifest; checked on normal, autocrlf,
   shallow and ZIP clones). History rewritten so only ArAnirudh2901 is a contributor. Model repo Kinthread-llm-model
   created; LLM-From-Scratch `main` now includes the kinship project.
+- 2026-10-20: npm → Bun (bun.lock migrated, same versions). Design/QA pass with the Emil/Apple/mobile skills: every
+  `:hover` gated behind `(hover: hover) and (pointer: fine)`, transparent tap highlight, no text selection on controls,
+  16px minimum input font, theme-color follows the page theme, hero 3D camera fitted to the canvas aspect (graph never
+  clipped), no row labels in the compact map layout, full-name `<title>` on truncated map names.

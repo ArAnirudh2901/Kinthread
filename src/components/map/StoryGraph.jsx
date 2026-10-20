@@ -272,7 +272,7 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
 
             {view && lay && (
               <g data-draw="" className={s.draw} transform={`translate(0 ${lay.shift})`}>
-                {plan.w >= 420 && lay.rows.length > 1 && lay.rows.map((r) => (
+                {!lay.compact && lay.rows.length > 1 && lay.rows.map((r) => (
                   <g key={r.gen} className={s.genRow}>
                     <line x1={0} x2={plan.w} y1={r.y - lay.shift} y2={r.y - lay.shift} />
                   </g>
@@ -314,7 +314,8 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
               </g>
             )}
             {/* row names drawn over the arrows, with a halo, so an arc passing by never cuts through them */}
-            {view && lay && plan.w >= 420 && lay.rows.length > 1 && (
+            {/* phones label names above/below, where row names would collide: skip them there */}
+            {view && lay && !lay.compact && lay.rows.length > 1 && (
               <g className={s.genLabels} transform={`translate(0 ${lay.shift})`} aria-hidden="true">
                 {lay.rows.map((r) => <text key={r.gen} x={4} y={r.y - lay.shift - 24}>{generationName(r.gen, personLabel(view.nodes[0]))}</text>)}
               </g>
@@ -338,6 +339,7 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
                 return (
                   <g key={name} ref={attach} data-name={name} className={s.person} data-role={role} onClick={onPick && !view ? () => onPick(name) : undefined}>
                     <g data-reveal={later ? i : undefined} data-later={later ? '' : undefined}>
+                      <title>{personLabel(name)}</title>
                       <circle className={s.hit} r={22} />
                       {onPath
                         ? <Shape gender={plan.sexes?.[i]} r={r} className={s.dot} />

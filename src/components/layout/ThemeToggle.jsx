@@ -22,6 +22,8 @@ export default function ThemeToggle() {
       if (next === 'light') root.dataset.theme = 'light';
       else delete root.dataset.theme;
       try { localStorage.setItem(KEY, next); } catch { /* switches for this visit only */ }
+      // status bar / browser chrome follows the page, not the OS
+      document.querySelector('meta[name=theme-color]')?.setAttribute('content', getComputedStyle(root).getPropertyValue('--bg').trim());
     };
     if (prefersReducedMotion()) return apply();
     if (!document.startViewTransition) {

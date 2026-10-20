@@ -5,7 +5,7 @@
 .brand strong { color: var(--ink); font-weight: 600; }
 .links { display: flex; flex-wrap: wrap; gap: 0 22px; }
 .links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); text-decoration: none; }
-.links a:hover { text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .links a:hover { text-decoration: underline; } }
 .version { margin: 0; font-size: 0.72rem; color: var(--text-2); letter-spacing: 0.04em; }
 @media (min-width: 900px) {
   .inner { grid-template-columns: 1fr auto; }

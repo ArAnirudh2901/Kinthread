@@ -10,7 +10,7 @@
   transition: box-shadow 0.3s var(--ease), background-color var(--t-fast) var(--ease);
   will-change: transform;
 }
-.trace:hover:not(:disabled) { box-shadow: 0 0 0 6px rgb(216 243 106 / 0.12), 0 14px 36px -12px rgb(216 243 106 / 0.6); }
+@media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) { box-shadow: 0 0 0 6px rgb(216 243 106 / 0.12), 0 14px 36px -12px rgb(216 243 106 / 0.6); } }
 .trace:focus-visible { outline-offset: 4px; }
 .trace:disabled { background: transparent; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line-strong); will-change: auto; }
 .glyph { color: #17252a; overflow: visible; }
@@ -18,8 +18,8 @@
 .runner { stroke: #17252a; visibility: hidden; }
 .trace:not(:disabled) .runner { visibility: visible; }
 .dotA, .dotB { fill: var(--copper); stroke: #17252a; stroke-width: 1; transform-box: fill-box; transform-origin: center; transition: transform 0.3s var(--spring); }
-.trace:hover:not(:disabled) .dotA { transform: scale(1.3); }
-.trace:hover:not(:disabled) .dotB { transform: scale(1.3); transition-delay: 0.12s; }
+@media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) .dotA { transform: scale(1.3); } }
+@media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) .dotB { transform: scale(1.3); transition-delay: 0.12s; } }
 .trace:disabled .glyph { color: var(--text-2); }
 .trace:disabled .dotA, .trace:disabled .dotB { fill: var(--line-strong); stroke: none; }
 .reason { margin: 0; font-size: 0.86rem; color: var(--text-2); }
@@ -27,7 +27,7 @@
 
 /* light theme: ink button, lichen thread inside */
 :root[data-theme="light"] .trace { background: var(--ink); color: var(--bg); box-shadow: 0 10px 30px -14px rgb(23 37 42 / 0.5); }
-:root[data-theme="light"] .trace:hover:not(:disabled) { box-shadow: 0 0 0 6px rgb(23 37 42 / 0.08), 0 14px 34px -14px rgb(23 37 42 / 0.55); }
+@media (hover: hover) and (pointer: fine) { :root[data-theme="light"] .trace:hover:not(:disabled) { box-shadow: 0 0 0 6px rgb(23 37 42 / 0.08), 0 14px 34px -14px rgb(23 37 42 / 0.55); } }
 :root[data-theme="light"] .trace:disabled { background: transparent; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
 :root[data-theme="light"] .trace:not(:disabled) .glyph { color: var(--lichen); }
 :root[data-theme="light"] .runner { stroke: #f4ffd0; }

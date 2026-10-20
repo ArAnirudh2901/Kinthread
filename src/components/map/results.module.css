@@ -40,12 +40,12 @@
   content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
   background: var(--surface-2); transform: scaleX(0); transform-origin: left; transition: transform 0.35s var(--ease);
 }
-.secondary:hover { border-color: var(--ink); }
-.secondary:hover::before { transform: scaleX(1); }
+@media (hover: hover) and (pointer: fine) { .secondary:hover { border-color: var(--ink); } }
+@media (hover: hover) and (pointer: fine) { .secondary:hover::before { transform: scaleX(1); } }
 .secondary:active { transform: scale(0.96); }
 .primary { composes: secondary; color: #17252a; border-color: var(--lichen); background: var(--lichen); }
 .primary::before { background: #f4ffd0; }
-.primary:hover { border-color: #f4ffd0; }
+@media (hover: hover) and (pointer: fine) { .primary:hover { border-color: #f4ffd0; } }
 
 .stale { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); font-size: 0.86rem; }
 .linkBtn { min-height: 32px; padding: 0; border: 0; background: none; font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; }

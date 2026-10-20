@@ -13,9 +13,9 @@
 .text { grid-area: text; color: var(--text-2); font-size: 0.94rem; max-width: 60ch; }
 .arrow { grid-area: arrow; align-self: center; color: var(--text-2); transition: transform var(--t) var(--ease), color var(--t-fast); }
 .row::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--surface); transform: scaleX(0); transform-origin: left; transition: transform 0.45s var(--ease); }
-.row:hover::before { transform: scaleX(1); }
-.row:hover .arrow { transform: translateX(6px); color: var(--lichen); }
-.row:hover .title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.16em; text-decoration-color: var(--copper); }
+@media (hover: hover) and (pointer: fine) { .row:hover::before { transform: scaleX(1); } }
+@media (hover: hover) and (pointer: fine) { .row:hover .arrow { transform: translateX(6px); color: var(--lichen); } }
+@media (hover: hover) and (pointer: fine) { .row:hover .title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.16em; text-decoration-color: var(--copper); } }
 @media (min-width: 900px) {
   .row { grid-template-columns: minmax(220px, 1fr) 2fr auto; grid-template-areas: "title text arrow"; padding: 28px 8px; }
 }

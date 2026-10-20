@@ -71,8 +71,12 @@ html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
 @media (min-width: 1100px) { :root { --gutter: 40px; } }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: 24px; -webkit-tap-highlight-color: rgb(216 243 106 / 0.25); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: 24px; -webkit-tap-highlight-color: transparent; }
 button, a, summary, label { touch-action: manipulation; }
+/* controls are not text: no selection or callout on long-press */
+button, summary, [role="button"] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* iOS zooms into inputs under 16px */
+input, textarea, select { font-size: max(16px, 1em); }
 body {
   margin: 0;
   min-height: 100vh;
@@ -92,7 +96,7 @@ button, input, textarea, select { font: inherit; color: inherit; letter-spacing:
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
-a:hover { text-decoration-color: var(--copper); }
+@media (hover: hover) and (pointer: fine) { a:hover { text-decoration-color: var(--copper); } }
 p { margin: 0 0 1em; }
 h1, h2, h3, h4 { margin: 0; font-weight: 500; text-wrap: balance; }
 p, li { text-wrap: pretty; }

@@ -9,7 +9,7 @@
 }
 .ctl { width: 36px; }
 .skip { padding: 0 14px; font-size: 0.82rem; font-weight: 600; }
-.ctl:hover:not(:disabled), .skip:hover:not(:disabled) { background: var(--surface-2); border-color: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .ctl:hover:not(:disabled), .skip:hover:not(:disabled) { background: var(--surface-2); border-color: var(--ink); } }
 .ctl:active:not(:disabled), .skip:active:not(:disabled) { transform: scale(0.92); }
 .ctl:disabled, .skip:disabled { opacity: 0.35; }
 
@@ -21,7 +21,7 @@
   padding: 10px 12px 10px 0; text-align: left; border: 0; border-radius: 10px; background: transparent; color: inherit;
   transition: background-color var(--t) var(--ease), opacity var(--t) var(--ease);
 }
-.row:hover { background: var(--surface-2); }
+@media (hover: hover) and (pointer: fine) { .row:hover { background: var(--surface-2); } }
 li[data-state="todo"] .row { opacity: 0.38; }
 li[data-state="active"] .row { background: var(--surface-2); }
 .badge {

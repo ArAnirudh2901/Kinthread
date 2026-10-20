@@ -158,5 +158,5 @@ export function solutionLayout(boxWidth, words, nameW, tagW, answerW, extraPad =
   const height = Math.ceil(Math.max(...bottoms) + shift + MARGIN + 8);
   const rows = [];
   for (let g = maxG; g >= minG; g--) rows.push({ gen: g, y: top + (maxG - g) * ROW + shift });
-  return { width, natural, height, shift, pts, labels, facts, answer, rows };
+  return { compact, width, natural, height, shift, pts, labels, facts, answer, rows };
 }

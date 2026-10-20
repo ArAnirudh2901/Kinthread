@@ -4,7 +4,7 @@
   font: 500 0.78rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2);
 }
 .details summary::-webkit-details-marker { display: none; }
-.details summary:hover { color: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .details summary:hover { color: var(--ink); } }
 .chev { transition: transform var(--t) var(--ease); }
 .details[open] .chev { transform: rotate(180deg); }
 .inner { display: grid; gap: 16px; padding: 4px 0 6px; }

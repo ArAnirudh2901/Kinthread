@@ -5,7 +5,7 @@
   background: transparent; color: var(--ink);
   transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform 0.15s var(--ease);
 }
-.toggle:hover { background: var(--surface); border-color: var(--line-strong); }
+@media (hover: hover) and (pointer: fine) { .toggle:hover { background: var(--surface); border-color: var(--line-strong); } }
 .toggle:active { transform: scale(0.92); }
 /* icons swap with a turn: the sun shows in dark mode (to switch to light), the moon in light mode */
 .toggle svg { grid-area: 1 / 1; transition: opacity 0.35s var(--ease), transform 0.5s var(--spring); }
@@ -13,4 +13,4 @@
 .moon { opacity: 0; transform: rotate(-90deg) scale(0.6); }
 :global(:root[data-theme="light"]) .sun { opacity: 0; transform: rotate(90deg) scale(0.6); }
 :global(:root[data-theme="light"]) .moon { opacity: 1; transform: none; }
-.toggle:hover .sun { transform: rotate(45deg); }
+@media (hover: hover) and (pointer: fine) { .toggle:hover .sun { transform: rotate(45deg); } }

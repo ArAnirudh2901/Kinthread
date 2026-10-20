@@ -9,6 +9,6 @@
   transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), transform 140ms var(--ease);
 }
 .arrow { color: var(--text-2); opacity: 0.6; transform: translateX(-2px); transition: transform 0.3s var(--spring), opacity 0.2s var(--ease), color 0.2s var(--ease); }
-.example:hover { border-color: var(--line-strong); background: var(--surface); }
-.example:hover .arrow { transform: translateX(2px); opacity: 1; color: var(--lichen); }
+@media (hover: hover) and (pointer: fine) { .example:hover { border-color: var(--line-strong); background: var(--surface); } }
+@media (hover: hover) and (pointer: fine) { .example:hover .arrow { transform: translateX(2px); opacity: 1; color: var(--lichen); } }
 .example:active { transform: scale(0.96); }

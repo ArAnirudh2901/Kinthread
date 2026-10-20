@@ -11,8 +11,8 @@
 }
 .download svg { overflow: visible; }
 .dlArrow { transition: transform 0.3s var(--spring); }
-.download:hover { border-color: var(--ink); background: var(--surface-2); }
-.download:hover .dlArrow { transform: translateY(1.5px); }
+@media (hover: hover) and (pointer: fine) { .download:hover { border-color: var(--ink); background: var(--surface-2); } }
+@media (hover: hover) and (pointer: fine) { .download:hover .dlArrow { transform: translateY(1.5px); } }
 .download:active { transform: scale(0.94); }
 .download[data-state="busy"] .dlArrow { animation: dl-drop 0.7s var(--ease) infinite; }
 .download[data-state="done"] { border-color: var(--sea-ink); color: var(--sea-ink); }
@@ -53,7 +53,7 @@
 .person[data-role="a"] .dot, .person[data-role="b"] .dot, .person[data-role="ab"] .dot { fill: var(--surface); stroke: var(--copper); stroke-width: 2.5; }
 .person[data-role="lit"] .dot { fill: var(--lichen); stroke: var(--ink); stroke-width: 1.5; }
 .person[data-role="via"] .dot { fill: var(--sea); }
-.box[data-view="live"] .person:hover .dot { transform: scale(1.25); }
+@media (hover: hover) and (pointer: fine) { .box[data-view="live"] .person:hover .dot { transform: scale(1.25); } }
 .letter { font: 600 11px/1 var(--font-mono); fill: var(--ink); pointer-events: none; }
 .person[data-role="lit"] .letter { fill: #17252a; }
 .name { font: 500 14px/1 var(--font-ui); fill: var(--ink); pointer-events: none; }
