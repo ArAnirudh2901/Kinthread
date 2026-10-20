@@ -19,7 +19,8 @@
 .download[data-state="failed"] { border-color: var(--copper); color: var(--copper-ink); }
 @keyframes dl-drop { 0% { transform: translateY(-3px); opacity: 0; } 60% { transform: translateY(1px); opacity: 1; } 100% { transform: translateY(2px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .download[data-state="busy"] .dlArrow { animation: none; } }
-.box { position: relative; width: 100%; }
+.box { position: relative; width: 100%; transition: opacity 200ms var(--ease); }
+.box[data-stale] { opacity: 0.45; }
 /* phones: the map uses the card's padding too */
 @media (max-width: 560px) { .box { width: calc(100% + 20px); margin-inline: -10px; } }
 .svg { display: block; overflow: visible; }

@@ -40,7 +40,8 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
   const running = run?.status === 'running';
   const shown = run?.status === 'done' ? run : running ? last : null;
   const stale = !!shown && !running && (shown.story !== story || shown.a !== a || shown.b !== b);
-  const view = useMemo(() => (shown && !stale ? graphView(shown) : null), [shown, stale]);
+  // an edited story keeps its last answer on screen (dimmed, no replay) until it is solved again
+  const view = useMemo(() => (shown ? graphView(shown) : null), [shown]);
   const [drawn, setDrawn] = useState(null);
   // the worked answer's playhead: which step is showing, and controls for the step list
   const player = useRef(null);
@@ -81,10 +82,10 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
             : (
               <>
                 {view && (view.variant === 'found' || view.variant === 'tentative') && (
-                  <div className={rs.result}><Headline run={shown} shown={drawn === shown.id} tentative={view.variant === 'tentative'} /></div>
+                  <div className={`${rs.result} ${stale ? s.staleDim : ''}`}><Headline run={shown} shown={drawn === shown.id} tentative={view.variant === 'tentative'} /></div>
                 )}
-                <StoryGraph people={people} links={links} a={a} b={b} view={view} onPlayer={onPlayer} onStep={onStep} onPick={onPick}>
-                  {view && (view.variant === 'found' || view.variant === 'tentative') && (
+                <StoryGraph people={people} links={links} a={a} b={b} view={view} stale={stale} onPlayer={onPlayer} onStep={onStep} onPick={onPick}>
+                  {view && !stale && (view.variant === 'found' || view.variant === 'tentative') && (
                     <StepCaption run={shown} tentative={view.variant === 'tentative'} progress={progress?.runKey === shown.id ? progress : null} player={player} />
                   )}
                 </StoryGraph>

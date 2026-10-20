@@ -31,3 +31,6 @@
 .warn { flex: none; }
 
 .tip { margin: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--copper); font-size: 0.86rem; color: var(--ink); background: rgb(227 151 115 / 0.08); }
+
+.clear { transition: opacity 120ms var(--ease); }
+.clear:active:not(:disabled) { opacity: 0.55; }

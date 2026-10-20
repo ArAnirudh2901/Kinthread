@@ -68,3 +68,10 @@
 .addBtn { border: 1px solid var(--ink); background: var(--ink); color: var(--bg); font-weight: 550; }
 .cancel { border: 1px solid var(--line); background: transparent; }
 .addError { margin: 0; font-size: 0.84rem; color: var(--copper-ink); }
+
+/* press feedback on every control: pills shrink a touch, text buttons dim */
+.swap, .remove, .addBtn, .cancel { transition: transform 120ms var(--ease), border-color var(--t-fast), background-color var(--t-fast); }
+.swap:active:not(:disabled), .addBtn:active, .cancel:active { transform: scale(0.95); }
+.remove:active { opacity: 0.6; }
+.missing { transition: opacity 120ms var(--ease), color var(--t-fast); }
+.missing:active { opacity: 0.55; }

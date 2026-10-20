@@ -60,3 +60,7 @@ li[data-state="active"] .badge { transform: scale(1.08); }
 .inner { display: grid; gap: 10px; }
 .solution[open] .inner { animation: drop 0.3s var(--ease); }
 @keyframes drop { from { opacity: 0; transform: translateY(-6px); } }
+
+/* press feedback: a step press, not a jump */
+.row { transition: background-color var(--t) var(--ease), opacity var(--t) var(--ease), transform 120ms var(--ease); }
+.row:active { transform: scale(0.99); }

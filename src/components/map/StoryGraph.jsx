@@ -34,7 +34,7 @@ function Shape({ gender, r, className, ...rest }) {
   return <path d={`M0 ${-d}L${d} 0L0 ${d}L${-d} 0Z`} className={className} {...rest} />;
 }
 
-export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep, onPick, children }) {
+export default function StoryGraph({ people, links, a, b, view, stale, onPlayer, onStep, onPick, children }) {
   const box = useRef(null);
   const svg = useRef(null);
   const width = useWidth(box);
@@ -98,7 +98,11 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
       resume.current = { runKey: null, time: 0, playing: false };
       api.current = null;
       playerCb.current?.(null);
-      ctx.ignore(() => e.setTargets(null, { instant: mode === 'none' }));
+      ctx.ignore(() => {
+        e.setTargets(null, { instant: mode === 'none' });
+        // live map: nobody may stay hidden by a previous worked answer's timeline
+        gsap.set(gsap.utils.selector(svg)('[data-name] > g'), { clearProps: 'opacity,visibility,transform' });
+      });
       return;
     }
     const { layout } = plan;
@@ -250,7 +254,7 @@ export default function StoryGraph({ people, links, a, b, view, onPlayer, onStep
 
   return (
     <div className={s.wrap}>
-      <div ref={box} className={s.box} data-view={view?.variant || 'live'} data-scroll={plan.vw > width || undefined}>
+      <div ref={box} className={s.box} data-stale={stale || undefined} data-view={view?.variant || 'live'} data-scroll={plan.vw > width || undefined}>
         {width > 0 && (
           <svg ref={svg} width={plan.vw || width} height={plan.vh} viewBox={`0 0 ${plan.w || width} ${plan.h}`} role="img" aria-labelledby={titleId} className={s.svg}>
             <title id={titleId}>{desc}</title>

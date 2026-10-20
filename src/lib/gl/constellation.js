@@ -49,7 +49,10 @@ const PALETTES = {
   light: { thread: hex('#17252a', 0.13), spouse: hex('#2b6e60', 0.28), lit: hex('#17252a', 0.8), sea: hex('#2b6e60', 0.9), copper: hex('#c86e4b', 1), lichen: hex('#7d9a14', 1), pulse: hex('#c86e4b', 1), additive: false },
 };
 const FOVY = 0.62;
-const FILL = 0.8;   // share of the narrower half field of view the family may use (the rest is margin)
+const FILL = 0.8;
+const SPIN_TAU = 5;    // hero spin decays over ~3 tau, then the scene rests (no endless loop)
+const PULSE_END = 9;   // seconds the light keeps running down the thread
+   // share of the narrower half field of view the family may use (the rest is margin)
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 function mat4Perspective(fovy, aspect, near, far) {
@@ -175,7 +178,8 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     const t = Math.max(0, (now - t0) / 1000);   // a frame's timestamp can predate t0 by a few ms
     pointer.x += (pointer.tx - pointer.x) * 0.06;
     pointer.y += (pointer.ty - pointer.y) * 0.06;
-    const yaw = (still ? 0.6 : 0.6 + t * 0.07) + pointer.x * 0.35;
+    const spin = variant === 'hero' ? 0.07 * SPIN_TAU * (1 - Math.exp(-t / SPIN_TAU)) : t * 0.07;
+    const yaw = (still ? 0.6 : 0.6 + spin) + pointer.x * 0.35;
     const pitch = 0.3 + pointer.y * 0.12;
     // distance at which the turning family stays inside the narrower of the two fields of view, at every aspect ratio
     const aspect = canvas.width / canvas.height;
@@ -223,7 +227,8 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     }
     if (pulses.length) {
       const pd = new Float32Array(pulses.length * 8);
-      pulses.forEach((p, k) => pd.set([...p, ...C.pulse, 7], k * 8));
+      const fade = variant === 'hero' ? Math.max(0, Math.min(1, PULSE_END - t)) : 1;   // premultiplied: scale all four
+      pulses.forEach((p, k) => pd.set([...p, ...C.pulse.map((c) => c * fade), 7], k * 8));
       gl.bindBuffer(gl.ARRAY_BUFFER, buf.pulse);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, pd);
       bind(point, 8, [['a_pos', 3], ['a_color', 4], ['a_size', 1]]);
@@ -240,6 +245,9 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     if (lite && now - last < 33) return;   // ~30 fps on slow devices
     last = now;
     draw(now);
+    // at rest: spin decayed, light gone, pointer caught up. Stop drawing until something changes
+    if (variant === 'hero' && (now - t0) / 1000 > Math.max(PULSE_END, SPIN_TAU * 3) &&
+      Math.abs(pointer.tx - pointer.x) < 1e-3 && Math.abs(pointer.ty - pointer.y) < 1e-3) stop();
   }
   function start() {
     if (running || still || lost || !visible || document.hidden) return;
@@ -258,7 +266,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => { if (!running) draw(performance.now()); }) : null;
   ro?.observe(canvas);
   const fine = variant === 'hero' && !still && matchMedia('(hover: hover) and (pointer: fine)').matches;
-  const onMove = (e) => { pointer.tx = (e.clientX / innerWidth) * 2 - 1; pointer.ty = (e.clientY / innerHeight) * 2 - 1; };
+  const onMove = (e) => { pointer.tx = (e.clientX / innerWidth) * 2 - 1; pointer.ty = (e.clientY / innerHeight) * 2 - 1; start(); };
   if (fine) window.addEventListener('pointermove', onMove, { passive: true });
   const onLost = (e) => { e.preventDefault(); lost = true; stop(); };
   const onRestored = () => { lost = false; try { init(); draw(performance.now()); start(); } catch { /* stays blank */ } };

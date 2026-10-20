@@ -32,3 +32,6 @@
 .privacy { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 0; font-size: 0.84rem; line-height: 1.5; color: var(--text-2); }
 .privacy svg { flex: none; margin-top: 3px; color: var(--ink); }
 .privacy strong { color: var(--ink); font-weight: 600; }
+
+/* an answer for text that has since changed: still visible, clearly not current */
+.staleDim { opacity: 0.45; transition: opacity 200ms var(--ease); }
