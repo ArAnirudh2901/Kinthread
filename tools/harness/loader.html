@@ -1,0 +1,62 @@
+<!doctype html><meta charset="utf-8"><title>loader speed check</title>
+<body style="margin:0;background:#111;color:#eee;font:14px system-ui">
+<pre id="log" style="position:fixed;bottom:0;left:400px;margin:8px"></pre>
+<script type="module">
+// Runs the real loading window under several network profiles and checks, every animation frame:
+// weave = number, never ahead of the bytes, never backwards, no skipped percent, one canvas, "Ready" only after 100%.
+const PROFILES = [
+  { name: 'instant (no throttle)', p: null, limit: 30 },
+  { name: 'fast (~4 s)', p: { rate: 3500 }, limit: 30 },
+  { name: 'medium (~20 s)', p: { rate: 700 }, limit: 40 },
+  { name: 'jittery with stalls', p: { rate: 1200, jitter: 0.9, stallEvery: 3000, stallMs: 1500 }, limit: 40 },
+  { name: 'high latency (3 s first byte)', p: { rate: 2500, latency: 3000 }, limit: 30 },
+  { name: 'slow 3G (first 25 s)', p: { rate: 60 }, limit: 25 },
+];
+const log = (s) => { document.getElementById('log').textContent += s + '\n'; };
+const results = [];
+for (const { name, p, limit } of PROFILES) {
+  await fetch('/__profile', { method: 'POST', body: p ? JSON.stringify(p) : '' });
+  localStorage.removeItem('kinthread-model');
+  for (const k of await caches.keys()) await caches.delete(k);
+  const f = document.createElement('iframe');
+  f.src = '/?r=' + Math.random();
+  f.style.cssText = 'width:390px;height:844px;border:0;display:block';
+  document.body.prepend(f);
+  await new Promise((r) => (f.onload = () => setTimeout(r, 2500)));
+  const W = f.contentWindow, d = f.contentDocument.querySelector('dialog');
+  [...d.querySelectorAll('button')].find((b) => /Download/.test(b.textContent)).click();
+  const s = { name, frames: 0, mismatch: 0, ahead: 0, backwards: 0, skipped: 0, canvases: new Set(), maxStep: 0, hit100: null, ready: null, readyBefore100: false, last: -1, lastW: 0, finished: false };
+  const t0 = performance.now();
+  await new Promise((done) => {
+    const tick = () => {
+      const t = (performance.now() - t0) / 1000;
+      if (!d.open || t > limit) { s.finished = !d.open; done(); return; }
+      const cv = d.querySelector('canvas');
+      const txt = d.querySelector('[class*=count]')?.textContent || '';
+      const m = (d.querySelector('[class*=detail]')?.textContent || '').match(/([\d.]+) of ([\d.]+)/);
+      if (cv && /%/.test(txt)) {
+        s.frames++; s.canvases.add(cv);
+        const w = +cv.dataset.weave || 0, n = parseInt(txt, 10), raw = m ? +m[1] / +m[2] : null;
+        if (Math.abs(Math.floor(w * 100 + 1e-9) - n) > 1) s.mismatch++;
+        if (raw !== null && w > raw + 0.004) s.ahead++;
+        if (w + 1e-6 < s.lastW || n < s.last) s.backwards++;
+        if (s.last >= 0 && n - s.last > 1) s.skipped++;
+        s.maxStep = Math.max(s.maxStep, w - s.lastW);
+        s.lastW = w; s.last = n;
+        if (n === 100 && s.hit100 === null) s.hit100 = t;
+      }
+      if (/Ready/.test(txt) && s.ready === null) { s.ready = t; s.readyBefore100 = s.hit100 === null; }
+      W.requestAnimationFrame(tick);
+    };
+    W.requestAnimationFrame(tick);
+  });
+  f.remove();
+  const r = { ...s, canvases: s.canvases.size, maxStep: +s.maxStep.toFixed(4), hit100: s.hit100 && +s.hit100.toFixed(2), ready: s.ready && +s.ready.toFixed(2), lastPct: s.last };
+  delete r.lastW; delete r.last;
+  results.push(r);
+  log(JSON.stringify(r));
+}
+await fetch('/__profile', { method: 'POST', body: '' });
+await fetch('/__result', { method: 'POST', body: JSON.stringify({ loader: results }) });
+document.title = 'loader done';
+</script>

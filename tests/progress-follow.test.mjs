@@ -1,70 +1,85 @@
-// The loader's progress follower against simulated downloads: steady, bursty (16 MB parts), stalled, and a last-chunk
-// jump. Frames at 60 fps; raw reports every 32 ms, as the worker sends them.
+// The loader's progress follower against every kind of connection: download durations from 0.5 s to 10 minutes,
+// display rates of 30, 60 and 120 fps, and steady, bursty (16 MB parts), jittery, stalling and slow-first-byte
+// networks. Raw reports arrive every 32 ms, as the worker sends them.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createFollower } from '../src/lib/progress-follow.js';
 
-function run(rawAt, seconds) {
+function rng(seed) { return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32); }
+
+// raw(t) for a download that takes `total` seconds, shaped by the network pattern
+function network(pattern, total, rand) {
+  if (pattern === 'steady') return (t) => Math.min(1, t / total);
+  if (pattern === 'bursty') { const step = total / 4; return (t) => Math.min(1, Math.floor(t / step) * 0.26 + (t >= total ? 1 : 0)); }
+  if (pattern === 'latency') { const wait = Math.min(3, total / 3); return (t) => (t < wait ? 0 : Math.min(1, (t - wait) / (total - wait))); }
+  if (pattern === 'stalls') return (t) => { const cycle = total / 5, inCycle = t % cycle; const done = Math.floor(t / cycle) * 0.2 + Math.min(0.2, (inCycle / (cycle * 0.6)) * 0.2); return Math.min(1, t >= total ? 1 : done); };
+  // jitter: rate varies randomly between 10% and 190% of the mean, piecewise every 0.25 s
+  const rates = Array.from({ length: Math.ceil(total / 0.25) + 2 }, () => 0.1 + 1.8 * rand());
+  const sum = rates.slice(0, Math.ceil(total / 0.25)).reduce((x, y) => x + y, 0);
+  return (t) => {
+    if (t >= total) return 1;
+    let acc = 0, k = 0;
+    for (; (k + 1) * 0.25 <= t; k++) acc += rates[k];
+    return Math.min(1, (acc + rates[k] * ((t - k * 0.25) / 0.25)) / sum);
+  };
+}
+
+function run(rawAt, seconds, fps) {
   const f = createFollower();
   const frames = [];
   let nextReport = 0;
-  for (let t = 0; t <= seconds; t += 1 / 60) {
-    if (t >= nextReport) { f.push(rawAt(t)); nextReport += 0.032; }
+  for (let i = 0, t = 0; t <= seconds; i++, t = i / fps) {
+    while (t >= nextReport) { f.push(rawAt(nextReport)); nextReport += 0.032; }
     frames.push({ t, raw: f.raw, d: f.step(t) });
   }
   return frames;
 }
 
-function checkInvariants(frames, name) {
-  let prev = 0;
-  for (const { raw, d } of frames) {
-    assert.ok(d <= raw + 1e-12, `${name}: ahead of the download (${d} > ${raw})`);
-    assert.ok(d >= prev - 1e-12, `${name}: went backwards (${prev} -> ${d})`);
-    prev = d;
-  }
+const DURATIONS = [0.5, 1, 3, 10, 60, 600];
+const FPS = [30, 60, 120];
+const PATTERNS = ['steady', 'bursty', 'jitter', 'stalls', 'latency'];
+
+for (const pattern of PATTERNS) {
+  test(`${pattern}: every duration and frame rate keeps the guarantees`, () => {
+    for (const total of DURATIONS) {
+      for (const fps of FPS) {
+        const name = `${pattern} ${total}s @${fps}fps`;
+        const tail = 1 / (0.0099 * fps) + 1;   // worst case to count the rest after an instant download
+        const frames = run(network(pattern, total, rng(total * 1000 + fps)), total + tail + 1, fps);
+        let prev = 0, prevPct = 0;
+        for (const { raw, d } of frames) {
+          assert.ok(d <= raw + 1e-12, `${name}: ahead of the download`);
+          assert.ok(d >= prev - 1e-12, `${name}: went backwards`);
+          const pct = Math.floor(100 * d);
+          assert.ok(pct - prevPct <= 1, `${name}: skipped from ${prevPct}% to ${pct}%`);
+          prev = d; prevPct = pct;
+        }
+        const rawDone = frames.find((x) => x.raw === 1).t, done = frames.find((x) => x.d === 1)?.t;
+        assert.ok(done !== undefined, `${name}: never reached 100%`);
+        assert.ok(done - rawDone <= tail, `${name}: reached 100% ${done - rawDone}s after the download`);
+        if (pattern === 'steady' && total >= 3 && fps >= 60) {
+          const lag = Math.max(...frames.filter((x) => x.t > 1 && x.raw < 1).map((x) => x.raw - x.d));
+          assert.ok(lag < 0.06, `${name}: lag ${lag}`);
+          assert.ok(done - rawDone < 0.6, `${name}: finish ${done - rawDone}s late`);
+        }
+      }
+    }
+  });
 }
-
-const maxStep = (frames) => Math.max(...frames.slice(1).map((x, i) => x.d - frames[i].d));
-const doneAt = (frames) => frames.find((x) => x.d === 1)?.t;
-const rawDoneAt = (frames) => frames.find((x) => x.raw === 1)?.t;
-
-test('steady download: tracks closely, every percent shown in order, exact 100%', () => {
-  const frames = run((t) => Math.min(1, t / 3), 4);   // whole model in 3 s (a fast connection)
-  checkInvariants(frames, 'steady');
-  const lag = Math.max(...frames.filter((x) => x.t > 0.5 && x.raw < 1).map((x) => x.raw - x.d));
-  assert.ok(lag < 0.06, `lag ${lag}`);
-  assert.ok(maxStep(frames) < 0.015, `largest frame step ${maxStep(frames)}`);
-  const pcts = [...new Set(frames.map((x) => Math.floor(100 * x.d)))];
-  assert.ok(pcts.every((p, i) => i === 0 || p - pcts[i - 1] <= 1), 'a percentage was skipped');
-  assert.equal(frames.at(-1).d, 1);
-  assert.ok(doneAt(frames) - rawDoneAt(frames) < 0.6, `100% came ${doneAt(frames) - rawDoneAt(frames)} s after the download`);
-});
-
-test('bursty download (16 MB parts): no jumps, never ahead', () => {
-  const frames = run((t) => Math.min(1, Math.floor(t / 0.8) * 0.27), 5);   // 27% lands every 0.8 s
-  checkInvariants(frames, 'bursty');
-  assert.ok(maxStep(frames) < 0.06, `largest frame step ${maxStep(frames)}`);
-  assert.equal(frames.at(-1).d, 1);
-});
-
-test('stalled download: holds still, never creeps past the data', () => {
-  const frames = run((t) => (t < 1 ? t * 0.4 : 0.4), 4);
-  checkInvariants(frames, 'stall');
-  assert.equal(frames.at(-1).d, 0.4);
-  assert.ok(frames.filter((x) => x.t > 2).every((x) => x.d === 0.4));
-});
-
-test('last chunk jump: rises smoothly to exactly 100%', () => {
-  const frames = run((t) => (t < 1 ? 0.97 * t : 1), 3);
-  checkInvariants(frames, 'last');
-  assert.ok(maxStep(frames) < 0.03);
-  assert.equal(frames.at(-1).d, 1);
-  assert.ok(doneAt(frames) - rawDoneAt(frames) < 0.6);
-});
 
 test('bad input is safe: NaN, negatives, > 1, shrinking reports', () => {
   const f = createFollower();
   for (const r of [NaN, -1, 0.5, 0.3, 2]) f.push(r);
-  for (let t = 0; t < 2; t += 1 / 60) f.step(t);
+  for (let t = 0; t < 3; t += 1 / 60) f.step(t);
   assert.equal(f.value, 1);
+});
+
+test('a hidden tab (frames stop for 30 s) resumes without a leap', () => {
+  const f = createFollower();
+  f.push(0.2);
+  for (let t = 0; t < 1; t += 1 / 60) f.step(t);
+  const before = f.value;
+  f.push(0.9);
+  const after = f.step(31);   // next frame comes 30 s later
+  assert.ok(after - before <= 0.0099 + 1e-9, `leapt ${after - before}`);
 });

@@ -2,7 +2,9 @@
 // ~every 32 ms). The weave (threads = d x all threads) and the percentage (floor(100 d)) both read this same value, so
 // they always agree. Guarantees, checked in tests/progress-follow.test.mjs:
 //   never ahead of the download (d <= raw), never backwards, smooth (critically damped: no jumps even when data
-//   arrives in bursts), and settles exactly on raw, so it reads 100% when, and only when, the download is complete.
+//   arrives in bursts), at most MAX_STEP per frame (so no percentage is ever skipped, at any connection speed or frame
+//   rate), and settles exactly on raw, so it reads 100% only once the download is complete.
+const MAX_STEP = 0.0099;   // just under 1% per frame
 export function createFollower({ smoothTime = 0.12 } = {}) {
   let value = 0, vel = 0, raw = 0, last = null;
   return {
@@ -23,6 +25,7 @@ export function createFollower({ smoothTime = 0.12 } = {}) {
       vel = (vel - omega * temp) * decay;
       let next = raw + (change + temp) * decay;
       if (next > raw) { next = raw; vel = 0; }   // never ahead of the download
+      if (next - value > MAX_STEP) { next = value + MAX_STEP; vel = Math.min(vel, MAX_STEP / dt); }   // every percent shown
       if (next < value) { next = value; vel = Math.max(0, vel); }   // never backwards
       if (raw - next < 1e-4) { next = raw; vel = 0; }   // settle exactly (100% is reached, not approached forever)
       value = next;
