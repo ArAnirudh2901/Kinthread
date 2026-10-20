@@ -30,7 +30,7 @@ const PeoplePicker = forwardRef(function PeoplePicker({ state, ready, measured, 
     if (prefersReducedMotion()) return;
     const icon = e.currentTarget.querySelector('svg');
     const to = Math.round(gsap.getProperty(icon, 'rotation') / 180) * 180 + 180;
-    gsap.to(icon, { rotation: to, duration: 0.55, ease: 'back.out(1.8)', transformOrigin: '50% 50%', overwrite: true });
+    gsap.to(icon, { rotation: to, duration: 0.28, ease: 'power3.out', transformOrigin: '50% 50%', overwrite: true });
   });
 
   const blank = (key) => {

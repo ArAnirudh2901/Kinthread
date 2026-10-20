@@ -7,6 +7,7 @@ import { EXAMPLES } from '@/lib/examples';
 import { prepare, splitQuestion } from '@/lib/exam';
 import { MAX_PEOPLE, WORD_LIMIT, countWords } from '@/lib/story';
 import MapPanel from '@/components/map/MapPanel';
+import DevData from './DevData';
 import Examples from './Examples';
 import PeoplePicker from './PeoplePicker';
 import StoryEditor from './StoryEditor';
@@ -131,6 +132,7 @@ export default function Workbench() {
           onSubmit={onTrace}
         />
         <Examples onPick={(example) => dispatch({ type: 'example', example })} />
+        {process.env.NODE_ENV !== 'production' && <DevData dispatch={dispatch} demo={EXAMPLES[0]} />}
         <PeoplePicker
           ref={pickerRef}
           state={st}

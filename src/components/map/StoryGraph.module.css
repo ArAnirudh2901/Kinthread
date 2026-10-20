@@ -108,3 +108,12 @@
 .readHint { margin: 0; font-size: 0.8rem; color: var(--text-2); }
 .readHint b { color: var(--ink); font-weight: 600; }
 .box[data-scroll] { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* a map wider than its box: soft edges show there is more to scroll */
+.box[data-scroll] { -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 36px), transparent); scrollbar-width: thin; }
+.box[data-scroll][data-at-start] { -webkit-mask-image: linear-gradient(to right, #000, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000, #000 calc(100% - 36px), transparent); }
+.box[data-scroll][data-at-end] { -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000); mask-image: linear-gradient(to right, transparent, #000 24px, #000); }
+.box[data-scroll][data-at-start][data-at-end] { -webkit-mask-image: none; mask-image: none; }
+
+/* never squeeze a scrolling map below its minimum readable scale: it scrolls instead */
+.box[data-scroll] .svg { max-width: none; }

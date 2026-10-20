@@ -153,3 +153,7 @@ will decide later).
 - 2026-10-20: unique "Red thread" palette from natural dyes (indigo ground and question, weld gold facts, madder red
   answer/accent, undyed wool text), role-named tokens, logo redrawn in the map's language (gold square/circle facts,
   indigo question diamond, red answer thread and node), favicon to match; README images recaptured.
+- 2026-10-20: PRODUCT.md (confirmed product truth) and DESIGN.md (Red thread system) added; animation audit plans in
+  `plans/` (all DONE); dev-only worst-case toggle (`?data=worst|exam|one|many|long|empty`, `src/lib/fixtures.dev.js`,
+  excluded from production); fixed maps being squeezed below readable scale on phones (`max-width` on the SVG): they
+  now scroll sideways with a faded edge.

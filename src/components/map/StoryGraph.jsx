@@ -115,7 +115,7 @@ export default function StoryGraph({ people, links, a, b, view, stale, onPlayer,
     const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
     const stops = [];
     let t = reduce || again ? 0 : 0.6;   // let the people glide into place first
-    const pop = { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(2.2)' };
+    const pop = { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(1.4)' };
     const hidden = { autoAlpha: 0, scale: 0.55, transformOrigin: '50% 50%' };
 
     // 0. the question: A and B, and a dashed "?" between them
@@ -145,7 +145,7 @@ export default function StoryGraph({ people, links, a, b, view, stale, onPlayer,
       tl.to(q('[data-q]'), { autoAlpha: 0, duration: 0.35 }, t);
       tl.fromTo(q('[data-a-line]'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.75 }, t + 0.1);
       tl.fromTo(q('[data-a-head]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, t + 0.8);
-      tl.fromTo(q('[data-a-tag]'), hidden, { ...pop, ease: 'back.out(2.6)' }, t + 0.55);
+      tl.fromTo(q('[data-a-tag]'), hidden, { ...pop, ease: 'back.out(1.6)' }, t + 0.55);
       tl.fromTo(q('[data-lit]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3 }, t + 0.8);
       tl.fromTo(q('[data-halo]'), { autoAlpha: 0.7, scale: 1, transformOrigin: '50% 50%' }, { autoAlpha: 0, scale: 2.3, duration: 0.8, ease: 'power2.out' }, t + 0.85);
       t += 1.2;
@@ -213,6 +213,19 @@ export default function StoryGraph({ people, links, a, b, view, stale, onPlayer,
   }, []);
 
   // download: finish the worked answer first, then save what is on screen as a PNG
+  // wide maps on narrow screens scroll sideways: fade the edge that has more to see
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const mark = () => {
+      el.toggleAttribute('data-at-start', el.scrollLeft <= 1);
+      el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+    };
+    mark();
+    el.addEventListener('scroll', mark, { passive: true });
+    return () => el.removeEventListener('scroll', mark);
+  }, [plan.vw, width]);
+
   const [save, setSave] = useState('idle');   // idle | busy | done | failed
   const download = async () => {
     if (!svg.current || save === 'busy') return;

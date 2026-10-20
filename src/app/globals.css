@@ -137,7 +137,7 @@ p, li { text-wrap: pretty; }
 .prose a { text-decoration-color: var(--line-strong); }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
 
 /* more contrast asked for: lines and secondary text at full strength */
