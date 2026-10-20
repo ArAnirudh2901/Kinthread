@@ -90,6 +90,8 @@
    (ThemeToggle animates the clip-path); otherwise colours cross-fade while html has .theme-fade. */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 ::view-transition-new(root) { z-index: 2; }
+/* the reveal must not steal the pointer: the toggle keeps its hover, so its icon does not reset and turn again */
+::view-transition { pointer-events: none; }
 html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
   transition: background-color 0.5s var(--ease), color 0.5s var(--ease), border-color 0.5s var(--ease),
     fill 0.5s var(--ease), stroke 0.5s var(--ease), box-shadow 0.5s var(--ease) !important;

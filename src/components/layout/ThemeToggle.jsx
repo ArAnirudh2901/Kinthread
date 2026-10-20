@@ -1,5 +1,5 @@
 'use client';
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useRef } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
 import s from './ThemeToggle.module.css';
 
@@ -15,7 +15,15 @@ const getTheme = () => (document.documentElement.dataset.theme === 'light' ? 'li
 export default function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getTheme, () => null);
 
+  // hover is tracked by hand: the theme reveal briefly takes the pointer away from the page, and :hover would drop
+  // and return, turning the icon back and forth with the cursor standing still
+  const revealing = useRef(false);
+  const hover = (e, on) => {
+    if (!on && revealing.current) return;
+    if (on) e.currentTarget.dataset.hover = ''; else delete e.currentTarget.dataset.hover;
+  };
   const toggle = (e) => {
+    const btn = e.currentTarget;
     const root = document.documentElement;
     const next = getTheme() === 'dark' ? 'light' : 'dark';
     const apply = () => {
@@ -34,10 +42,16 @@ export default function ThemeToggle() {
       return;
     }
     // the new theme grows out of the toggle as a circle, on the compositor
-    const r = e.currentTarget.getBoundingClientRect();
+    const r = btn.getBoundingClientRect();
     const x = r.left + r.width / 2, y = r.top + r.height / 2;
     const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    revealing.current = true;
     const vt = document.startViewTransition(apply);
+    vt.finished.finally(() => {
+      revealing.current = false;
+      // Chrome reports no hover until the pointer moves again: decide on the next move, not now
+      addEventListener('pointermove', (ev) => { if (!btn.contains(ev.target)) delete btn.dataset.hover; }, { once: true });
+    });
     vt.ready.then(() => {
       root.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
@@ -51,6 +65,8 @@ export default function ThemeToggle() {
       type="button"
       className={s.toggle}
       onClick={toggle}
+      onPointerEnter={(e) => hover(e, true)}
+      onPointerLeave={(e) => hover(e, false)}
       aria-label={theme ? `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme` : 'Switch color theme'}
     >
       {/* the icon follows html[data-theme] in CSS, so server and client render the same markup */}

@@ -20,10 +20,19 @@ export function startSmoothScroll() {
   if (lenis || !fine || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
   lenis = new Lenis({
     autoRaf: false,
-    lerp: 0.085,
+    lerp: 0.1,
     wheelMultiplier: 0.9,
     anchors: { offset: -16 },
     allowNestedScroll: true,
+    // a trackpad flick queues a lot of distance ahead of the page; reversing drops that queue so the page turns at
+    // once, and the queue never runs more than most of a screen ahead
+    virtualScroll: ({ deltaY }) => {
+      if (!lenis || !deltaY) return true;
+      const ahead = lenis.targetScroll - lenis.animatedScroll;
+      if (ahead && Math.sign(deltaY) !== Math.sign(ahead)) lenis.targetScroll = lenis.animatedScroll;
+      else if (Math.abs(ahead) > innerHeight * 0.8) lenis.targetScroll = lenis.animatedScroll + Math.sign(ahead) * innerHeight * 0.8;
+      return true;
+    },
     // dialogs, text areas and boxes that scroll on their own keep native scrolling
     prevent: (node) => !!node.closest?.('dialog, textarea, [data-scroll], [data-lenis-prevent]'),
   });

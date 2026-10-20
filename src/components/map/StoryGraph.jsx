@@ -249,10 +249,11 @@ export default function StoryGraph({ people, links, relations = {}, a, b, view, 
     const title = solved ? `${B} is ${A}\u2019s ${view.relation}${view.variant === 'tentative' ? ' (best guess)' : ''}.`
       : view?.variant === 'none' ? `The story doesn\u2019t link ${A} and ${B} as family.`
         : view?.variant === 'same' ? `${A} was chosen twice.` : 'Story map';
-    const subtitle = view ? `How is ${B} related to ${A}?  \u00b7  Worked out by Kinthread` : `${names.length} people  \u00b7  Kinthread`;
+    const question = view ? `How is ${B} related to ${A}?` : null;
+    const subtitle = view ? 'Worked out step by step by Kinthread  \u00b7  kinthread.pages.dev' : `${names.length} people  \u00b7  Kinthread`;
     const slug = (x) => String(x || 'map').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     try {
-      await downloadMap(svg.current, { title, subtitle, legend: solved, filename: view ? `kinthread-${slug(A)}-${slug(B)}.png` : 'kinthread-story-map.png' });
+      await downloadMap(svg.current, { question, title, subtitle, legend: solved, filename: view ? `kinthread-${slug(A)}-${slug(B)}.png` : 'kinthread-story-map.png' });
       setSave('done');
     } catch {
       setSave('failed');

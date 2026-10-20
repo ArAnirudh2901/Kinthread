@@ -136,11 +136,11 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   const edgeStyle = (k) => ({
     // soft yellow: the answer path carries the colour, the rest is a faint wash (stronger while weaving, so woven
     // threads stay clearly ahead of the grey ones still to come)
-    col: onPath.has(k) ? C.lit : withAlpha(C.lit, weave ? 0.5 : 0.2),
+    col: onPath.has(k) ? C.lit : withAlpha(C.lit, weave ? 0.5 : C.additive ? 0.2 : 0.68),   // ink on paper does not add up: stronger
     w: onPath.has(k) ? 2.4 : 1.4,
   });
   const nodeStyle = (i) => ({
-    col: i === graph.top ? C.copper : pathNodes.has(i) || weave ? C.lichen : withAlpha(C.lichen, 0.7),
+    col: i === graph.top ? C.copper : pathNodes.has(i) || weave || !C.additive ? C.lichen : withAlpha(C.lichen, 0.7),
     size: i === graph.top || i === graph.leaf ? 9 : pathNodes.has(i) ? 6.5 : 5,
   });
   let woven = false;

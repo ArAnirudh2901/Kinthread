@@ -253,3 +253,6 @@ will decide later).
   (asked both ways); cone soft yellow; How it works copy names the Chalkboard colours.
 - 2026-10-20: morphs added on the most-used path (nav underline, headline/caption/counter blur swaps, Swap cross-over,
   guidance line, disclosures, add-name). Loader suite 14/14 clean on this build; solve harness clean.
+- 2026-10-20: trackpad reversal fix (Lenis virtualScroll drops queued distance on reversal, caps it at 0.8 screen);
+  theme toggle hover tracked by pointer events (the reveal took :hover away); PNG export states the question at the top
+  and the answer at the bottom; light-theme cone stronger (ink on paper does not add up).

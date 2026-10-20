@@ -50,7 +50,7 @@ function wrap(ctx, text, maxW) {
   return lines;
 }
 
-export async function downloadMap(svg, { title, subtitle, filename, legend }) {
+export async function downloadMap(svg, { question, title, subtitle, filename, legend }) {
   const vb = svg.viewBox.baseVal;
   const W = vb && vb.width ? vb.width : svg.clientWidth;
   const H = vb && vb.height ? vb.height : svg.clientHeight;
@@ -98,9 +98,13 @@ export async function downloadMap(svg, { title, subtitle, filename, legend }) {
   const probe = document.createElement('canvas').getContext('2d');
   probe.font = `600 19px ${font}`;
   const titleLines = title ? wrap(probe, title, textW) : [];
+  // the question heads the image, the answer closes it: it reads like worked homework
+  probe.font = `600 17px ${font}`;
+  const questionLines = question ? wrap(probe, question, textW) : [];
+  const topH = question ? 16 + questionLines.length * 24 + 8 : 0;
   probe.font = `400 12.5px ${font}`;
   const subLines = wrap(probe, subtitle || 'Kinthread', textW);
-  probe.font = `500 11.5px ${mono}`;
+  probe.font = `500 12px ${font}`;
   // colour key, flowing onto a second row when narrow
   const keyRows = [[]];
   if (legend) {
@@ -113,8 +117,8 @@ export async function downloadMap(svg, { title, subtitle, filename, legend }) {
     }
   }
   const keyH = legend ? keyRows.length * 20 + 6 : 0;
-  const captionH = 18 + titleLines.length * 26 + 4 + subLines.length * 18 + 10;
-  const outH = pad + H + keyH + captionH + pad / 2;
+  const captionH = (question ? 18 : 0) + 18 + titleLines.length * 26 + 4 + subLines.length * 18 + 10;
+  const outH = pad + topH + H + keyH + captionH + pad / 2;
 
   const scale = 2;
   const canvas = document.createElement('canvas');
@@ -124,11 +128,21 @@ export async function downloadMap(svg, { title, subtitle, filename, legend }) {
   ctx.scale(scale, scale);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, outW, outH);
-  ctx.drawImage(img, (outW - W) / 2, pad, W, H);
+  if (question) {
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = muted;
+    ctx.font = `500 12.5px ${font}`;
+    ctx.fillText('Question', pad, pad + 10);
+    ctx.fillStyle = ink;
+    ctx.font = `600 17px ${font}`;
+    let qy = pad + 16;
+    for (const line of questionLines) { qy += 24; ctx.fillText(line, pad, qy - 6); }
+  }
+  ctx.drawImage(img, (outW - W) / 2, pad + topH, W, H);
 
-  let y = pad + H;
+  let y = pad + topH + H;
   if (legend) {
-    ctx.font = `500 11.5px ${mono}`;
+    ctx.font = `500 12px ${font}`;
     ctx.textBaseline = 'middle';
     for (const row of keyRows) {
       y += 20;
@@ -148,6 +162,12 @@ export async function downloadMap(svg, { title, subtitle, filename, legend }) {
     y += 6;
   }
   ctx.textBaseline = 'alphabetic';
+  if (question) {
+    y += 18;
+    ctx.fillStyle = muted;
+    ctx.font = `500 12.5px ${font}`;
+    ctx.fillText('Answer', pad, y + 10);
+  }
   y += 18;
   ctx.fillStyle = ink;
   ctx.font = `600 19px ${font}`;
