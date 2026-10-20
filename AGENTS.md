@@ -13,6 +13,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Keep this file current. Whenever a decision, command, constraint or open item changes, update it here (and the
 Claude memory noted in CLAUDE.md), so the next model can continue cold. Add a line to the handoff log at the end.
 
+## Related repos
+
+| Repo | Local path | Holds |
+| --- | --- | --- |
+| [Kinthread](https://github.com/ArAnirudh2901/Kinthread) (this) | `~/Web_Dev/kinthread` | the website + final model in `vendor/kinship/` |
+| [Kinthread-llm-model](https://github.com/ArAnirudh2901/Kinthread-llm-model) | `~/Generative_AI/Kinthread-llm-model` | model code (create, train, test, export), checkpoints, data, exported model |
+| [LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch) | `~/Generative_AI/LLM_from_Scratch` | the whole learning project; canonical source of the model code (`2_Training_Tiny_LLM`) |
+
+Model change flow: retrain/export in LLM-From-Scratch, then `npm run sync` here (refreshes `vendor/kinship/`; commit it),
+and publish the model repo (see its AGENTS.md).
+
+Pushing: if `gh` is signed in as someone else, authenticate the single push as the owner:
+`git -c credential.helper= -c 'credential.helper=!f() { test "$1" = get && echo username=ArAnirudh2901 && echo "password=$(gh auth token --user ArAnirudh2901)"; }; f' push`
+
 ## What it is
 
 Static Next.js 16 site, "Kinthread: blood-relation puzzles, solved step by step". It runs the owner's from-scratch
@@ -39,7 +53,10 @@ will decide later).
 - Before any `gh` command or push, run `gh auth status`: only act as the owner's account (ArAnirudh2901). If another
   account is active, authenticate that one command with the owner's token or ask the owner to switch; don't switch
   accounts for them.
-- No quantization, no smaller or distilled model: exact fp32 weights. Don't push weights.
+- No quantization, no smaller or distilled model: exact fp32 weights. Weights live only in `vendor/kinship/` here and
+  in Kinthread-llm-model.
+- Commits are authored as `Anirudh Aravalli <anirudh30012005@gmail.com>` (ArAnirudh2901; set in this repo's git
+  config). Never add `Co-Authored-By: Claude` or `Claude-Session` lines: only ArAnirudh2901 may appear as a contributor.
 - Test in the owner's real Google Chrome through the Claude-in-Chrome extension, in ONE reused tab. Never `open -a`
   a URL per test (each opens a new tab). Safari: one tab, closed afterwards. A hidden tab pauses animation frames,
   so harness runs stall unless the tab is in front.
@@ -122,3 +139,6 @@ will decide later).
 - 2026-10-20: worked-solution map (relations rules, generation layout, step playback), phone fit, PNG download,
   responsive sweep, renamed to Kinthread, UX simplification for students, exam-question input, harness moved to
   `tools/harness/`. Published to GitHub (README with map images, model tests skip on a fresh clone).
+- 2026-10-20: final model committed in `vendor/kinship/` (binary, SHA-256 manifest; checked on normal, autocrlf,
+  shallow and ZIP clones). History rewritten so only ArAnirudh2901 is a contributor. Model repo Kinthread-llm-model
+  created; LLM-From-Scratch `main` now includes the kinship project.
