@@ -1,0 +1,4 @@
+# Cloudflare Pages project settings, used by `npm run preview`. Deploying is manual: see README.
+name = "kinthread"
+pages_build_output_dir = "out"
+compatibility_date = "2026-10-01"

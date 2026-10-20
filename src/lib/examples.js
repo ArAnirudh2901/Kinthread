@@ -1,0 +1,58 @@
+// Example stories. Each was run through the real model (all three engine builds agree) on 2026-10-19;
+// tests/examples.test.mjs re-checks the outcome noted here against the synced runtime.
+export const EXAMPLES = [
+  {
+    id: 'exam',
+    label: 'Exam question',
+    hint: 'Letters as names, with the question pasted in',
+    story: 'A is the brother of B. C is the father of A. How is C related to B?',
+    a: 'B',
+    b: 'C',
+    expect: { kind: 'answer', relation: 'father' },
+  },
+  {
+    id: 'short',
+    label: 'Two steps',
+    hint: 'A short chain through one person',
+    story: "Ashley's daughter, Lillian, asked her mom to read her a story. Nicholas's sister Lillian asked him for some help.",
+    a: 'Ashley',
+    b: 'Nicholas',
+    expect: { kind: 'answer', relation: 'son' },
+  },
+  {
+    id: 'three',
+    label: 'Three steps',
+    hint: 'Father, his wife, her daughter',
+    story: "Victor asked his father George for advice. George's wife Helen made tea for them. Helen's daughter Rose joined them in the kitchen.",
+    a: 'Victor',
+    b: 'Rose',
+    expect: { kind: 'answer', relation: 'sister' },
+  },
+  {
+    id: 'places',
+    label: 'Places aren’t people',
+    hint: 'Tokyo is mentioned, but only people become nodes',
+    story: "Priya flew to Tokyo with her father Arjun. Arjun's mother Kavya met them at the airport.",
+    a: 'Priya',
+    b: 'Kavya',
+    expect: { kind: 'answer', relation: 'grandmother' },
+  },
+  {
+    id: 'friend',
+    label: 'A friend, not family',
+    hint: 'Mark is connected, but not by family',
+    story: "Ashley's daughter Lillian baked cookies. Lillian invited her friend Mark over to taste them.",
+    a: 'Ashley',
+    b: 'Mark',
+    expect: { kind: 'unknown' },
+  },
+  {
+    id: 'apart',
+    label: 'Two families',
+    hint: 'Nothing in the story links them',
+    story: 'Rosa took her son Mateo fishing at the lake. Hannah baked bread with her daughter Ingrid.',
+    a: 'Rosa',
+    b: 'Ingrid',
+    expect: { kind: 'unknown' },
+  },
+];

@@ -1,0 +1,34 @@
+.panel { display: grid; gap: 12px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; flex-wrap: wrap; }
+.head h2 { margin: 0; }
+
+
+/* cartographic sheet: faint dot grid on the elevated surface */
+.sheet {
+  position: relative;
+  min-height: 420px;
+  padding: clamp(12px, 3vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background-color: var(--surface);
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1.3px);
+  background-size: 18px 18px;
+  background-position: 9px 9px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.body { display: grid; gap: 18px; margin-top: 8px; }
+.idle { margin: 0; color: var(--text-2); max-width: 46ch; }
+.sheet[aria-busy] .body { opacity: 0.45; transition: opacity var(--t) var(--ease); }
+/* only appears when tracing takes longer than 150 ms */
+.tracing {
+  position: absolute; top: 14px; right: 16px; padding: 4px 10px; border-radius: 999px;
+  font: 500 0.7rem/1.4 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--ink); color: var(--bg); opacity: 0; pointer-events: none;
+}
+.sheet[aria-busy] .tracing { animation: appear 1ms 150ms forwards; }
+@keyframes appear { to { opacity: 1; } }
+
+.privacy { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 0; font-size: 0.84rem; line-height: 1.5; color: var(--text-2); }
+.privacy svg { flex: none; margin-top: 3px; color: var(--ink); }
+.privacy strong { color: var(--ink); font-weight: 600; }

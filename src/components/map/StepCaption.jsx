@@ -1,0 +1,56 @@
+'use client';
+import { useRef } from 'react';
+import { gsap, prefersReducedMotion, useGSAP } from '@/lib/gsap';
+import { workedSteps } from '@/lib/worked';
+import s from './StepCaption.module.css';
+
+// Subtitles for the map: the step on screen, in words, right under the picture.
+// Decorative duplicate of the step list (which screen readers use), so hidden from assistive tech.
+export default function StepCaption({ run, tentative, progress, player }) {
+  const el = useRef(null);
+  const { rows } = workedSteps(run, tentative);
+  const k = progress ? Math.min(progress.step, rows.length - 1) : rows.length - 1;
+  const row = rows[k];
+  useGSAP(() => {
+    if (prefersReducedMotion()) return;
+    gsap.fromTo(el.current, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out' });
+  }, { dependencies: [k, run.id], scope: el });
+  // at the end the headline below gives the answer, so the caption shows the working instead
+  const label = row.tone === 'question' ? 'The question' : row.tone === 'answer' ? (row.sum ? 'Putting it together' : tentative ? 'Best guess' : 'The answer') : `Step ${row.badge} of ${rows.length - 2}`;
+  const last = rows.length - 1;
+  const playing = !!progress?.playing;
+  const ctl = (fn) => () => player.current?.[fn]();
+  return (
+    <div className={s.wrap}>
+    <div ref={el} className={s.caption} data-tone={row.tone} aria-hidden="true">
+      <span className={s.badge}>{row.badge}</span>
+      <span className={s.text}>
+        <span className={s.label}>{label}</span>
+        <span className={s.main}>{row.tone === 'question' ? row.text.replace(/^The question: /, '') : row.sum || row.text.replace(/^(Answer|Best guess): /, '')}</span>
+        {row.so && <span className={s.so}>{row.so}</span>}
+      </span>
+    </div>
+    <div className={s.controls} role="group" aria-label="Step through the answer">
+      <span className={s.count} aria-hidden="true">{k + 1} / {rows.length}</span>
+      <button type="button" className={s.ctl} onClick={ctl('replay')} aria-label="Replay from the start" title="Replay">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.4-3.3M3.5 2.5v2.4h2.4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      <button type="button" className={s.ctl} onClick={ctl('prev')} disabled={k === 0} aria-label="Previous step" title="Previous step">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      <button type="button" className={s.ctl} onClick={ctl(playing ? 'pause' : 'play')} aria-label={playing ? 'Pause' : k === last ? 'Play again' : 'Play'} title={playing ? 'Pause' : 'Play'}>
+        {playing
+          ? <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+          : <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M5 3.2v9.6L12.5 8Z" fill="currentColor" /></svg>}
+      </button>
+      <button type="button" className={s.ctl} onClick={ctl('next')} disabled={k === last} aria-label="Next step" title="Next step">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      <button type="button" className={s.skip} onClick={ctl('skip')} disabled={k === last} aria-label="Show the answer">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3.5 3.5 9 8l-5.5 4.5ZM12 3.5v9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <span>Show answer</span>
+      </button>
+    </div>
+    </div>
+  );
+}

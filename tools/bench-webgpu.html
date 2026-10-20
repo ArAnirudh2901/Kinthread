@@ -1,0 +1,115 @@
+<!doctype html><meta charset="utf-8"><title>Kinthread: WebGPU vs WebAssembly</title>
+<body style="font:14px ui-monospace,monospace;background:#10191d;color:#f0f0e8;padding:16px"><pre id="out">running…</pre>
+<script type="module">
+const out = { ua: navigator.userAgent, isolated: crossOriginIsolated };
+const log = (k, v) => { out[k] = v; document.getElementById('out').textContent = JSON.stringify(out, null, 1); };
+const med = (a) => { const s = [...a].sort((x, y) => x - y); return +s[s.length >> 1].toFixed(3); };
+const RT = '/r/6fa59e965a08/';
+const RUNTIME = (await import('/__runtime.js')).RUNTIME;
+
+// ---- 1. WebAssembly engine (main thread here, same code the worker runs) ----
+const { KinshipQA } = await import(RT + 'kinship.js');
+const read = async (f) => new Uint8Array(await (await fetch(RUNTIME.model.base + f)).arrayBuffer());
+const fetchFn = async (name) => {
+  const [, m, ext] = /^(qa|tagger)\.(json|bin\.gz)$/.exec(name);
+  const f = RUNTIME.model.files[m];
+  if (ext === 'json') return new Response(await read(f.json.file));
+  const parts = await Promise.all(f.parts.map((p) => read(p.file)));
+  return new Response(new Blob(parts));
+};
+const qa = await KinshipQA.load({ base: '', fetchFn, engine: 'auto' });
+const net = qa.qa, fwd = net.forward.bind(net), lg = net.logits.bind(net), lgs = net.logitsSome.bind(net);
+let calls = [];
+net.forward = (...a) => { const t = performance.now(); const r = fwd(...a); calls.push({ rows: a[0].length, ms: performance.now() - t }); return r; };
+net.logits = (...a) => { const t = performance.now(); const r = lg(...a); calls.push({ logits: a[1], ms: performance.now() - t }); return r; };
+net.logitsSome = (...a) => { const t = performance.now(); const r = lgs(...a); calls.push({ some: a[1], ms: performance.now() - t }); return r; };
+const story = "Victor asked his father George for advice. George's wife Helen made tea for them. Helen's daughter Rose joined them in the kitchen.";
+for (let i = 0; i < 3; i++) qa.ask(story, 'Victor', 'Rose');
+const per = [];
+for (let i = 0; i < 15; i++) { calls = []; const t = performance.now(); qa.ask(story, 'Victor', 'Rose'); per.push({ total: performance.now() - t, calls }); }
+const steps = per[0].calls.filter((c) => c.rows != null);
+log('wasm', {
+  engine: qa.engine, threads: qa.threads,
+  questionMs: med(per.map((p) => p.total)),
+  forwardCalls: steps.length,
+  rowsPerCall: steps.map((c) => c.rows),
+  decodeStepMs: med(per.flatMap((p) => p.calls.filter((c) => c.rows != null).slice(1).map((c) => c.ms))),
+  prefillMs: med(per.map((p) => p.calls.find((c) => c.rows != null).ms)),
+});
+
+// ---- 2. WebGPU: the same matrix work per decode step, results read back each step ----
+if (!navigator.gpu) { log('webgpu', 'not available'); }
+else {
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  if (!adapter) log('webgpu', 'no adapter');
+  else {
+    const dev = await adapter.requestDevice({ requiredLimits: { maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxBufferSize: adapter.limits.maxBufferSize } });
+    const info = adapter.info || {};
+    const C = 384, F = 1536, V = 2921, L = 6, RMAX = 64;
+    const code = `
+      struct Dims { R: u32, K: u32, N: u32, pad: u32 };
+      @group(0) @binding(0) var<uniform> d: Dims;
+      @group(0) @binding(1) var<storage, read> x: array<vec4<f32>>;
+      @group(0) @binding(2) var<storage, read> w: array<vec4<f32>>;
+      @group(0) @binding(3) var<storage, read_write> y: array<f32>;
+      @compute @workgroup_size(64)
+      fn main(@builtin(global_invocation_id) g: vec3<u32>) {
+        let n = g.x;
+        if (n >= d.N) { return; }
+        let k4 = d.K / 4u;
+        for (var r0 = 0u; r0 < d.R; r0 = r0 + 8u) {
+          var acc = array<f32, 8>(0., 0., 0., 0., 0., 0., 0., 0.);
+          for (var k = 0u; k < k4; k = k + 1u) {
+            let wv = w[n * k4 + k];
+            for (var r = 0u; r < 8u; r = r + 1u) {
+              if (r0 + r < d.R) { acc[r] = acc[r] + dot(wv, x[(r0 + r) * k4 + k]); }
+            }
+          }
+          for (var r = 0u; r < 8u; r = r + 1u) { if (r0 + r < d.R) { y[(r0 + r) * d.N + n] = acc[r]; } }
+        }
+      }`;
+    const pipe = dev.createComputePipeline({ layout: 'auto', compute: { module: dev.createShaderModule({ code }), entryPoint: 'main' } });
+    const buf = (bytes, usage) => dev.createBuffer({ size: Math.ceil(bytes / 16) * 16, usage });
+    const S = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
+    const rnd = (n) => { const a = new Float32Array(n); for (let i = 0; i < n; i++) a[i] = Math.random() * 0.02 - 0.01; return a; };
+    const shapes = [];
+    for (let l = 0; l < L; l++) shapes.push([C, 3 * C], [C, C], [C, F], [F, C]);
+    shapes.push([C, V]);
+    const t0 = performance.now();
+    const weights = shapes.map(([K, N]) => { const b = buf(K * N * 4, S); dev.queue.writeBuffer(b, 0, rnd(K * N)); return b; });
+    const xb = buf(RMAX * F * 4, S); dev.queue.writeBuffer(xb, 0, rnd(RMAX * F));
+    const yb = buf(RMAX * V * 4, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC);
+    const rb = buf(RMAX * V * 4, GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST);
+    await dev.queue.onSubmittedWorkDone();
+    const uploadMs = performance.now() - t0;
+    const run = async (R) => {
+      const groups = shapes.map(([K, N], i) => {
+        const u = buf(16, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+        dev.queue.writeBuffer(u, 0, new Uint32Array([R, K, N, 0]));
+        return [dev.createBindGroup({ layout: pipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: u } }, { binding: 1, resource: { buffer: xb } }, { binding: 2, resource: { buffer: weights[i] } }, { binding: 3, resource: { buffer: yb } }] }), N];
+      });
+      const times = [];
+      for (let it = 0; it < 35; it++) {
+        const t = performance.now();
+        const enc = dev.createCommandEncoder();
+        const pass = enc.beginComputePass();
+        pass.setPipeline(pipe);
+        for (const [g, N] of groups) { pass.setBindGroup(0, g); pass.dispatchWorkgroups(Math.ceil(N / 64)); }
+        pass.end();
+        enc.copyBufferToBuffer(yb, 0, rb, 0, R * V * 4);
+        dev.queue.submit([enc.finish()]);
+        await rb.mapAsync(GPUMapMode.READ, 0, R * V * 4);
+        rb.getMappedRange(0, R * V * 4);
+        rb.unmap();
+        if (it >= 5) times.push(performance.now() - t);
+      }
+      return med(times);
+    };
+    const firstT = performance.now(); await run(1); const firstMs = performance.now() - firstT;
+    const res = {};
+    for (const R of [1, 4, 8, 12, 48]) res[`rows${R}`] = await run(R);
+    log('webgpu', { vendor: info.vendor, architecture: info.architecture, description: info.description, uploadMs: +uploadMs.toFixed(1), firstRunMs: +firstMs.toFixed(1), stepMsByRows: res, note: 'matmuls only (no attention, layer norm, GELU): a lower bound for a WebGPU step' });
+  }
+}
+await fetch('/__result', { method: 'POST', body: JSON.stringify({ gpubench: out }) });
+</script>

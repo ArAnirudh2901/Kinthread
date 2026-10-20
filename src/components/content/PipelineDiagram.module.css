@@ -1,0 +1,28 @@
+.pipeline { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); counter-reset: none; }
+.stage { position: relative; display: grid; gap: 10px; align-content: start; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.stage > * { margin: 0; }
+.n { font: 500 0.72rem/1 var(--font-mono); color: var(--text-2); letter-spacing: 0.08em; }
+.title { font-family: var(--font-display); font-weight: 400; font-size: 1.6rem; line-height: 1.1; letter-spacing: -0.01em; }
+.visual { min-height: 110px; display: grid; align-items: center; padding: 14px; border-radius: 10px; border: 1px solid var(--line); background-color: var(--surface); background-image: radial-gradient(var(--grid-dot) 1px, transparent 1.3px); background-size: 16px 16px; }
+.model { font: 500 0.74rem/1.4 var(--font-mono); letter-spacing: 0.04em; color: var(--sea-ink); }
+.text { color: var(--text-2); font-size: 0.95rem; }
+
+.story { margin: 0; font-size: 0.9rem; line-height: 1.7; }
+.story mark { background: none; color: inherit; font-weight: 600; box-shadow: inset 0 -0.45em 0 rgb(121 200 183 / 0.6); }
+.tokens { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.tokens li { font: 0.76rem/1 var(--font-mono); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--bg); }
+.tokens .ent { background: var(--sea); border-color: var(--ink); color: #17252a; font-weight: 600; }
+.tokens .sp { border-style: dashed; color: var(--text-2); background: transparent; }
+.mini { width: 100%; max-width: 260px; overflow: visible; }
+.band { fill: none; stroke: var(--band); stroke-width: 9; stroke-linecap: round; }
+.thread { fill: none; stroke: var(--thread); stroke-width: 1.6; }
+.a { fill: var(--surface); stroke: var(--copper); stroke-width: 2.5; }
+.via { fill: var(--sea); stroke: var(--node-stroke); stroke-width: 1.4; }
+.b { fill: var(--lichen); stroke: var(--ink); stroke-width: 1.4; }
+.ans { font: italic 500 15px/1 var(--font-display); fill: var(--ink); }
+
+@media (min-width: 900px) {
+  .pipeline { grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+  .stage { padding: 28px 24px 28px 0; border-bottom: 0; }
+  .stage + .stage { padding-left: 24px; border-left: 1px solid var(--line); }
+}

@@ -1,0 +1,14 @@
+.pill {
+  display: none;
+  align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 999px;
+  font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.04em;
+  color: var(--text-2); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 640px) { .pill { display: inline-flex; } }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.pill[data-tone="ready"] .dot { background: var(--lichen); }
+.pill[data-tone="busy"] .dot { background: var(--sea); }
+.pill[data-tone="error"] .dot { background: var(--copper); }

@@ -1,0 +1,14 @@
+.examples { display: grid; gap: 10px; }
+.examples p { margin: 0; }
+.label { font-size: 0.88rem; color: var(--text-2); }
+.list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.example {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 38px; padding: 0 12px 0 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent;
+  font-size: 0.88rem; font-weight: 500; color: var(--ink);
+  transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), transform 140ms var(--ease);
+}
+.arrow { color: var(--text-2); opacity: 0.6; transform: translateX(-2px); transition: transform 0.3s var(--spring), opacity 0.2s var(--ease), color 0.2s var(--ease); }
+.example:hover { border-color: var(--line-strong); background: var(--surface); }
+.example:hover .arrow { transform: translateX(2px); opacity: 1; color: var(--lichen); }
+.example:active { transform: scale(0.96); }

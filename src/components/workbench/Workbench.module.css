@@ -1,0 +1,15 @@
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  padding-block: 8px 24px;
+}
+.inputs { display: grid; gap: 30px; align-content: start; min-width: 0; }
+.output { min-width: 0; scroll-margin-top: 16px; }
+
+@media (min-width: 1000px) {
+  .bench { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 0; }
+  .inputs { padding-right: 40px; border-right: 1px solid var(--line); }
+  .output { padding-left: 40px; }
+  .output > * { position: sticky; top: 20px; }
+}

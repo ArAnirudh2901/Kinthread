@@ -1,0 +1,119 @@
+<!doctype html><meta charset="utf-8"><title>Kinship QA solution test</title>
+<body style="font:13px ui-monospace,monospace;background:#222;color:#eee;margin:8px"><p id="s">running…</p><div id="stage"></div>
+<script type="module">
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const until = async (fn, ms = 20000) => { const t = performance.now(); while (performance.now() - t < ms) { try { const v = fn(); if (v) return v; } catch {} await sleep(40); } return null; };
+const out = { ua: navigator.userAgent, runs: [], errors: [] };
+const status = (x) => { document.getElementById('s').textContent = x; };
+const frame = (w, h) => new Promise((r) => { const f = document.createElement('iframe'); f.src = '/?t=' + Date.now(); f.style.cssText = `width:${w}px;height:${h}px;border:0;margin:4px`; f.onload = () => r(f); document.getElementById('stage').append(f); });
+
+function geometry(d) {
+  const svg = d.querySelector('section[aria-labelledby=map-title] svg[role=img]');
+  if (!svg) return { svg: false };
+  const vis = (el) => { let e = el; while (e && e !== svg) { const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || +cs.opacity < 0.05 || cs.display === 'none') return false; e = e.parentElement; } return true; };
+  const boxes = [];
+  // the lit B overlay sits exactly on the plain B letter by design
+  svg.querySelectorAll('text').forEach((t) => { if (vis(t) && t.textContent.trim() && !t.closest('[data-lit]')) boxes.push({ kind: 'text', label: t.textContent.trim(), el: t, r: t.getBoundingClientRect() }); });
+  svg.querySelectorAll('[data-tag] rect, [data-a-tag] rect').forEach((t) => { if (vis(t)) boxes.push({ kind: 'tag', label: t.parentElement.textContent.trim(), el: t, r: t.getBoundingClientRect() }); });
+  const ov = [];
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i], b = boxes[j];
+    // text inside its own tag, or the step number circle text inside the tag, is expected
+    if (a.el.parentElement === b.el.parentElement) continue;
+    const A = a.r, B = b.r;
+    const o = A.left < B.right - 1 && B.left < A.right - 1 && A.top < B.bottom - 1 && B.top < A.bottom - 1;
+    if (o) ov.push(`${a.label} x ${b.label}`);
+  }
+  const box = svg.parentElement.getBoundingClientRect();
+  const outside = boxes.filter((b) => b.r.left < box.left - 1 || b.r.right > box.right + 1 && !svg.parentElement.dataset.scroll).map((b) => b.label);
+  const op = (sel) => { const e = svg.querySelector(sel); return e ? +getComputedStyle(e).opacity : null; };
+  return {
+    svg: true, labels: boxes.length, overlaps: ov.slice(0, 6), outside: outside.slice(0, 4),
+    facts: svg.querySelectorAll('[data-fact]').length, answerTag: svg.querySelector('[data-a-tag]')?.textContent.trim() || null,
+    answerTagOpacity: op('[data-a-tag]'), questionOpacity: op('[data-q]'), scroll: !!svg.parentElement.dataset.scroll,
+    shapes: { squares: svg.querySelectorAll('g[data-name] rect').length, circles: svg.querySelectorAll('g[data-name] circle:not([r="22"]):not([data-halo])').length },
+  };
+}
+
+async function solveCase(d, w, name, action) {
+  const before = d.querySelector('section[aria-labelledby=map-title] h3')?.textContent;
+  const t0 = performance.now();
+  await action();
+  const rows = await until(() => { const r = [...d.querySelectorAll('section[aria-label^="Worked answer"] li')]; return r.length ? r : null; }, 8000);
+  const timeline = [];
+  if (rows) {
+    for (let i = 0; i < 80; i++) {
+      const live = [...d.querySelectorAll('section[aria-label^="Worked answer"] li')];
+      const idx = live.findIndex((li) => li.dataset.state === 'active');
+      if (!timeline.length || timeline[timeline.length - 1][1] !== idx) timeline.push([Math.round(performance.now() - t0), idx]);
+      if (idx === live.length - 1) break;
+      await sleep(100);
+    }
+  } else {
+    await until(() => { const h = d.querySelector('section[aria-labelledby=map-title] h3')?.textContent; return h && h !== before ? h : null; }, 8000);
+  }
+  await sleep(1500);
+  const res = {
+    name, width: w,
+    headline: d.querySelector('section[aria-labelledby=map-title] h3')?.textContent,
+    rows: rows ? [...d.querySelectorAll('section[aria-label^="Worked answer"] li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim().slice(0, 150)) : null,
+    timeline, geometry: geometry(d),
+  };
+  return res;
+}
+
+try {
+  for (const [w, h] of [[1200, 1500], [380, 1700]]) {
+    const f = await frame(w, h);
+    const W = f.contentWindow, d = f.contentDocument;
+    W.addEventListener('error', (e) => out.errors.push(`${w}: ${e.message} @ ${(e.error?.stack || '').split('\n').slice(0, 6).join(' | ')}`));
+    W.addEventListener('unhandledrejection', (e) => out.errors.push(`${w}: ${e.reason?.message || e.reason}`));
+    status(`loading model @${w}`);
+    await until(() => /Ready/.test(d.querySelector('header')?.textContent || ''), 120000);
+    const click = (t) => [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === t).click();
+    for (const ex of ['Two steps', 'Three steps', 'Places aren’t people', 'A friend, not family', 'Two families']) {
+      status(`${ex} @${w}`);
+      out.runs.push(await solveCase(d, w, ex, () => click(ex)));
+    }
+    if (w === 1200) {
+      // controls: back, next, replay, show answer
+      status('controls');
+      await solveCase(d, w, 'three again', () => click('Three steps'));
+      const sol = () => d.querySelector('section[aria-label^="Worked answer"]');
+      const active = () => [...sol().querySelectorAll('li')].findIndex((li) => li.dataset.state === 'active');
+      // playback controls live in the caption under the map
+      const btn = (label) => d.querySelector('[role=group][aria-label="Step through the answer"]').querySelector(`button[aria-label="${label}"]`);
+      const c = {};
+      btn('Previous step').click(); await sleep(400); c.afterBack = active(); c.answerHiddenAfterBack = geometry(d).answerTagOpacity;
+      btn('Previous step').click(); await sleep(400); c.afterBack2 = active();
+      btn('Next step').click(); await sleep(1600); c.afterNext = active();
+      sol().querySelector('li button').click(); await sleep(300); c.afterRowClick0 = active();
+      btn('Show the answer').click(); await sleep(300); c.afterSkip = active(); c.answerShownAfterSkip = geometry(d).answerTagOpacity;
+      btn('Replay from the start').click(); await sleep(300); c.afterReplay = active(); await sleep(6000); c.afterReplayDone = active();
+      // keyboard
+      sol().querySelector('li button').focus(); sol().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })); await sleep(300); c.afterArrowLeft = active();
+      out.controls = c;
+      // theme: light
+      d.querySelector('button[aria-label^="Switch to"]').click(); await sleep(1200);
+      const ans = d.querySelector('[data-a-tag] rect');
+      out.light = { theme: d.documentElement.dataset.theme || 'dark', answerTagFill: ans && getComputedStyle(ans).fill, factStroke: getComputedStyle(d.querySelector('[data-fact] [data-line]')).stroke, geometry: geometry(d) };
+      d.querySelector('button[aria-label^="Switch to"]').click(); await sleep(1200);
+      // a typed long chain
+      const set = (t) => { const ta = d.querySelector('textarea'); Object.getOwnPropertyDescriptor(W.HTMLTextAreaElement.prototype, 'value').set.call(ta, t); ta.dispatchEvent(new W.Event('input', { bubbles: true })); };
+      const story = "Mary's son Tom built a treehouse. Tom's daughter Lucy painted it. Lucy's brother Ben hammered the nails. Ben's son Max fetched water. Max's sister Ella held the ladder.";
+      out.runs.push(await solveCase(d, w, 'typed long chain', async () => {
+        set(story);
+        const chips = await until(() => { const b = [...d.querySelectorAll('ul[aria-label="People found in the story"] button')].filter((x) => !x.disabled && !x.getAttribute('aria-label').startsWith('Remove')); return b.some((x) => x.textContent.endsWith('Ella')) ? b : null; });
+        d.querySelectorAll('button[aria-pressed]')[0].click(); await sleep(60);
+        chips.find((x) => x.textContent.endsWith('Mary')).click(); await sleep(60);
+        d.querySelectorAll('button[aria-pressed]')[1].click(); await sleep(60);
+        chips.find((x) => x.textContent.endsWith('Ella')).click();   // choosing both people traces by itself
+      }));
+    }
+    out[`overflow${w}`] = d.documentElement.scrollWidth - W.innerWidth;
+    f.remove();
+  }
+} catch (e) { out.fatal = String(e?.stack || e); }
+status('done');
+await fetch('/__result', { method: 'POST', body: JSON.stringify({ solve: out }) });
+</script>

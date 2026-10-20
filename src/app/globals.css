@@ -1,0 +1,132 @@
+/* Kinship Loom design tokens: Mineral Signal palette.
+   Small text never uses lichen or sea glass on paper; those are fills and lines only. */
+:root {
+  color-scheme: dark;
+  /* Mineral Signal, dark: a late-night cartography lab */
+  --bg: #10191d;
+  --surface: #17252a;
+  --surface-2: #203035;
+  --ink: #f0f0e8;
+  --text-2: #a8b8b3;
+  --muted: #a8b8b3;
+  --line: #2a3a3e;
+  --line-strong: #5f7376;     /* control borders, >= 3:1 */
+  --lichen: #d8f36a;
+  --sea: #79c8b7;
+  --sea-ink: #79c8b7;
+  --copper: #e39773;
+  --copper-ink: #e39773;
+  --thread: #d8f36a;
+  --band: rgb(216 243 106 / 0.14);
+  --node-stroke: #10191d;
+  --grid-dot: rgb(240 240 232 / 0.06);
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.25), 0 24px 48px -28px rgb(0 0 0 / 0.7);
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-ui: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --gutter: 16px;
+  --max: 1160px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --t-fast: 160ms;
+  --t: 240ms;
+}
+
+/* light: mineral paper (opt-in; dark is the default) */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f0f0e8;
+  --surface: #fafaf3;
+  --surface-2: #e7e9df;
+  --ink: #17252a;
+  --text-2: #5a6a6f;          /* palette #627176 is 4.43:1 on paper; this is 4.92:1 for small text */
+  --muted: #627176;
+  --line: #d5ddd4;
+  --line-strong: #7a8986;
+  --sea-ink: #2b6e60;
+  --copper: #c86e4b;
+  --copper-ink: #9a4f31;
+  --thread: #17252a;          /* ink line over a lichen highlighter band */
+  --band: #d8f36a;
+  --node-stroke: #17252a;
+  --grid-dot: rgb(23 37 42 / 0.1);
+  --shadow: 0 1px 0 rgb(23 37 42 / 0.04), 0 12px 32px -18px rgb(23 37 42 / 0.25);
+}
+
+/* Theme switch. With View Transitions the new theme is revealed in a circle from the toggle
+   (ThemeToggle animates the clip-path); otherwise colours cross-fade while html has .theme-fade. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { z-index: 2; }
+html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
+  transition: background-color 0.5s var(--ease), color 0.5s var(--ease), border-color 0.5s var(--ease),
+    fill 0.5s var(--ease), stroke 0.5s var(--ease), box-shadow 0.5s var(--ease) !important;
+}
+
+@media (min-width: 720px) { :root { --gutter: 28px; } }
+@media (min-width: 1100px) { :root { --gutter: 40px; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: 24px; -webkit-tap-highlight-color: rgb(216 243 106 / 0.25); }
+button, a, summary, label { touch-action: manipulation; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1rem/1.55 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+main { flex: 1 0 auto; }
+img, svg { display: block; max-width: 100%; }
+button, input, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
+a:hover { text-decoration-color: var(--copper); }
+p { margin: 0 0 1em; }
+h1, h2, h3, h4 { margin: 0; font-weight: 500; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+::selection { background: var(--lichen); color: #17252a; }
+
+:focus-visible { outline: 2px solid var(--lichen); outline-offset: 3px; border-radius: 4px; }
+:root[data-theme="light"] :focus-visible { outline-color: var(--ink); }
+
+.container { width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
+.display { font-family: var(--font-display); font-optical-sizing: auto; font-variation-settings: "SOFT" 50, "WONK" 0; letter-spacing: -0.02em; font-weight: 400; }
+.mono { font-family: var(--font-mono); }
+/* workbench steps: a number and a plain instruction, so the order is obvious */
+.step { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 1.02rem/1.3 var(--font-ui); letter-spacing: -0.005em; color: var(--ink); }
+.step-num { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; font: 700 0.74rem/1 var(--font-mono); background: var(--ink); color: var(--bg); }
+.eyebrow { font: 500 0.72rem/1.35 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+.muted { color: var(--text-2); }
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link { position: absolute; left: var(--gutter); top: -100px; z-index: 50; padding: 10px 14px; background: var(--ink); color: var(--bg); border-radius: var(--radius-sm); }
+.skip-link:focus { top: 12px; }
+
+/* long-form pages */
+.prose { max-width: 68ch; font-size: 1.04rem; line-height: 1.72; }
+.prose h2 { scroll-margin-top: 24px; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem); line-height: 1.15; margin: 2.2em 0 0.6em; letter-spacing: -0.015em; }
+.prose h3 { font-size: 1.06rem; font-weight: 600; margin: 1.8em 0 0.4em; }
+.prose ul, .prose ol { padding-left: 1.2em; margin: 0 0 1.2em; }
+.prose li { margin: 0.3em 0; }
+.prose li::marker { color: var(--text-2); }
+.prose code { font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+.prose strong { font-weight: 600; }
+.prose a { text-decoration-color: var(--line-strong); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}

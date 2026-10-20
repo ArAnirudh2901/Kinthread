@@ -1,0 +1,53 @@
+// Runs the synced runtime (public/r, public/m) in Node: part checksums, reassembly, and every example's outcome.
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+import { EXAMPLES } from '../src/lib/examples.js';
+import { prepare } from '../src/lib/exam.js';
+import { RUNTIME } from '../src/lib/runtime.generated.js';
+
+const pub = new URL('../public/', import.meta.url);
+const read = (p) => readFile(new URL(p.replace(/^\//, ''), pub));
+
+test('model parts match their checksums', async () => {
+  for (const f of Object.values(RUNTIME.model.files)) {
+    for (const p of [f.json, ...f.parts]) {
+      const buf = await read(RUNTIME.model.base + p.file);
+      assert.equal(buf.length, p.bytes, p.file);
+      assert.equal(createHash('sha256').update(buf).digest('hex'), p.sha256, p.file);
+    }
+  }
+});
+
+test('examples give the outcomes the page promises', async () => {
+  const { KinshipQA } = await import(new URL(`.${RUNTIME.runtime}kinship.js`, pub));
+  const fetchFn = async (name) => {
+    const [, model, ext] = /^(qa|tagger)\.(json|bin\.gz)$/.exec(name);
+    const f = RUNTIME.model.files[model];
+    if (ext === 'json') return new Response(await read(RUNTIME.model.base + f.json.file));
+    return new Response(Buffer.concat(await Promise.all(f.parts.map((p) => read(RUNTIME.model.base + p.file)))));
+  };
+  const qa = await KinshipQA.load({ base: '', fetchFn, engine: 'simd' });
+  for (const ex of EXAMPLES) {
+    const p = prepare(ex.story);   // as the page sends it
+    const r = qa.ask(p.model, ex.a, ex.b, { names: p.letters });
+    assert.equal(r.kind, ex.expect.kind, `${ex.id}: kind`);
+    if (ex.expect.relation) assert.equal(r.relation, ex.expect.relation, `${ex.id}: relation`);
+    assert.ok(r.people.includes(ex.a) && r.people.includes(ex.b), `${ex.id}: people found`);
+  }
+  assert.ok(!qa.findNames(EXAMPLES.find((e) => e.id === 'places').story).includes('Tokyo'), 'Tokyo is not a person');
+
+  // exam-style questions, prepared the way the page prepares them (question pulled out, letters as names)
+  const exam = [
+    ['A is the brother of B. C is the father of A. How is C related to B?', 'father'],
+    ['Ravi is the brother of Meena. Suresh is the father of Ravi. How is Suresh related to Meena? (a) Uncle (b) Father', 'father'],
+    ['Anil is the son of Kamla. Kamla is the wife of Mohan. Mohan is the father of Rita. How is Anil related to Rita?', 'brother'],
+    ['P is the son of Q. Q is the wife of R. R is the father of S. How is P related to S?', 'brother'],
+  ];
+  for (const [text, want] of exam) {
+    const p = prepare(text);
+    const r = qa.ask(p.model, p.a, p.b, { names: p.letters });
+    assert.equal(r.relation, want, text);
+  }
+});

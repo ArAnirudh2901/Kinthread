@@ -1,0 +1,28 @@
+.caption { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border-left: 3px solid var(--line-strong); min-height: 64px; }
+.caption[data-tone="question"] { border-left-color: var(--copper); }
+.caption[data-tone="fact"] { border-left-color: var(--sea-ink); }
+.caption[data-tone="answer"] { border-left-color: var(--lichen); }
+.badge { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 700 0.8rem/1 var(--font-mono); border: 2px solid var(--line-strong); }
+.caption[data-tone="question"] .badge { border-color: var(--copper); border-style: dashed; color: var(--copper-ink); }
+.caption[data-tone="fact"] .badge { background: var(--sea-ink); border-color: var(--sea-ink); color: var(--bg); }
+.caption[data-tone="answer"] .badge { background: var(--lichen); border-color: var(--lichen); color: #17252a; }
+.text { display: grid; gap: 2px; min-width: 0; }
+.label { font: 600 0.66rem/1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
+.main { font-size: 1.02rem; font-weight: 550; line-height: 1.4; }
+.so { font-size: 0.9rem; color: var(--text-2); }
+
+.wrap { display: grid; gap: 8px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.count { margin-right: auto; font: 500 0.74rem/1 var(--font-mono); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.ctl, .skip {
+  display: inline-grid; place-items: center; height: 40px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform 0.12s var(--ease);
+}
+.ctl { width: 40px; }
+.skip { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px 0 12px; font-size: 0.84rem; font-weight: 600; }
+/* phones: icon only, so all controls stay on one row */
+@media (max-width: 420px) { .skip { width: 40px; padding: 0; justify-content: center; } .skip span { display: none; } }
+.ctl:hover:not(:disabled), .skip:hover:not(:disabled) { background: var(--surface-2); border-color: var(--ink); }
+.ctl:active:not(:disabled), .skip:active:not(:disabled) { transform: scale(0.92); }
+.ctl:disabled, .skip:disabled { opacity: 0.35; }
