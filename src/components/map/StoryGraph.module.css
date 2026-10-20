@@ -117,3 +117,6 @@
 
 /* never squeeze a scrolling map below its minimum readable scale: it scrolls instead */
 .box[data-scroll] .svg { max-width: none; }
+
+.tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
+.manualLink { flex: 1 1 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: 0.85rem var(--font-mono); }

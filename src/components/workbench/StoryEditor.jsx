@@ -1,11 +1,13 @@
 'use client';
-import { forwardRef, useId } from 'react';
+import { forwardRef, useId, useMemo } from 'react';
+import { contradictions } from '@/lib/consistency';
 import { spokenClue } from '@/lib/exam';
 import { WORD_LIMIT } from '@/lib/story';
 import s from './StoryEditor.module.css';
 
-const StoryEditor = forwardRef(function StoryEditor({ story, words, tokens, maxTokens, over, onChange, onClear, onSubmit }, ref) {
+const StoryEditor = forwardRef(function StoryEditor({ story, words, tokens, maxTokens, over, onChange, onClear, onSubmit, undo, onUndo }, ref) {
   const id = useId();
+  const issues = useMemo(() => contradictions(story), [story]);
   return (
     <div className={s.editor}>
       <div className={s.head}>
@@ -23,6 +25,7 @@ const StoryEditor = forwardRef(function StoryEditor({ story, words, tokens, maxT
         name="story"
         autoComplete="off"
         rows={6}
+        maxLength={6000}
         spellCheck
         aria-describedby={`${id}-count`}
         aria-invalid={over || undefined}
@@ -35,6 +38,18 @@ const StoryEditor = forwardRef(function StoryEditor({ story, words, tokens, maxT
           {over && <strong className={s.overText}>{tokens != null && tokens > maxTokens ? ' — too long for the model' : ' — over the limit'}</strong>}
         </span>
       </div>
+      {undo && (
+        <p className={s.undo} role="status">
+          Story cleared.
+          <button type="button" className={s.undoBtn} onClick={onUndo}>Undo</button>
+        </p>
+      )}
+      {issues.length > 0 && (
+        <div className={s.tip} role="status">
+          <strong>The story contradicts itself.</strong> {issues[0].message}
+          {issues.length > 1 ? ` (${issues.length - 1} more)` : ''} The answer may not make sense until it is fixed.
+        </div>
+      )}
       {spokenClue(story) && (
         <p className={s.tip}>
           Spoken-clue puzzles (&ldquo;Pointing to a photo, A said&hellip;&rdquo;) are not supported yet. Write the facts plainly instead,

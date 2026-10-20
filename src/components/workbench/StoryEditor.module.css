@@ -34,3 +34,10 @@
 
 .clear { transition: opacity 120ms var(--ease); }
 .clear:active:not(:disabled) { opacity: 0.55; }
+
+/* undo after Clear: inline, quiet, gone after a few seconds */
+.undo { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 0.9rem; color: var(--text-2); animation: undo-in 200ms var(--ease); }
+.undoBtn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: transparent; color: var(--ink); font-weight: 600; transition: transform 120ms var(--ease), border-color var(--t-fast); }
+@media (hover: hover) and (pointer: fine) { .undoBtn:hover { border-color: var(--ink); } }
+.undoBtn:active { transform: scale(0.95); }
+@keyframes undo-in { from { opacity: 0; transform: translateY(-4px); } }

@@ -167,3 +167,7 @@ will decide later).
 - 2026-10-20: one loading design everywhere (`map/Weave.jsx`: WeaveStage + DownloadStatus + AskCopy), used by the
   full-screen window on every device and by the map panel; the window also opens for any real network download
   (cache cleared/unavailable), not only first visits; quick loads from the device show nothing.
+- 2026-10-20: share link (`lib/share.js`, #hash only, validated, phone share sheet / clipboard with timeout and a
+  copy-by-hand fallback), undo for Clear (8 s), contradiction check (`lib/consistency.js`: gender clash, self relation,
+  parent cycle; tests in `tests/consistency.test.mjs`), error boundary around the map + `app/error.js`, story capped at
+  6000 characters.

@@ -53,6 +53,11 @@ device; there is no server, account or API key.
 Kinthread also:
 
 - **saves the map as an image** (PNG) for notes or sharing, made on the device;
+- **shares a question as a link**: the story travels in the URL's `#hash`, which is never sent to a server, and the
+  link opens the question already solved;
+- **notices a story that contradicts itself** (someone called both a son and a sister, a person who is their own
+  relative, two people each the other's parent) and says so before you trust the answer;
+- **lets you undo Clear** for a few seconds;
 - **says when it can't tell** rather than guessing: unrelated people get "no family link", and low-confidence answers
   are labelled a best guess;
 - **checks itself:** fixed kinship rules ("a father's wife is a mother") recompute the answer from the model's own

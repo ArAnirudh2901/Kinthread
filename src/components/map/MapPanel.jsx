@@ -9,6 +9,7 @@ import ResultView, { Headline } from './ResultView';
 import rs from './results.module.css';
 import StepCaption from './StepCaption';
 import StoryGraph from './StoryGraph';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import TraceError from './TraceError';
 import s from './MapPanel.module.css';
 
@@ -84,11 +85,13 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
                 {view && (view.variant === 'found' || view.variant === 'tentative') && (
                   <div className={`${rs.result} ${stale ? s.staleDim : ''}`}><Headline run={shown} shown={drawn === shown.id} tentative={view.variant === 'tentative'} /></div>
                 )}
-                <StoryGraph people={people} links={links} a={a} b={b} view={view} stale={stale} onPlayer={onPlayer} onStep={onStep} onPick={onPick}>
+                <ErrorBoundary resetKey={shown?.id ?? story} fallback={<p className={s.idle}>The map couldn&rsquo;t be drawn for this story. The answer and its steps are below.</p>}>
+                <StoryGraph people={people} links={links} a={a} b={b} view={view} stale={stale} share={shown ? { story: shown.story, a: shown.a, b: shown.b } : null} onPlayer={onPlayer} onStep={onStep} onPick={onPick}>
                   {view && !stale && (view.variant === 'found' || view.variant === 'tentative') && (
                     <StepCaption run={shown} tentative={view.variant === 'tentative'} progress={progress?.runKey === shown.id ? progress : null} player={player} />
                   )}
                 </StoryGraph>
+                </ErrorBoundary>
                 <Unfold id={key}>{body}</Unfold>
               </>
             )}

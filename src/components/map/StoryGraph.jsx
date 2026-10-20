@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { downloadMap } from '@/lib/export-image';
+import ShareButton from './ShareButton';
 import { GraphEngine } from '@/lib/graph/engine';
 import { gsap, prefersReducedMotion, useGSAP } from '@/lib/gsap';
 import { fitText, resetMeasurements, textWidth } from '@/lib/measure';
@@ -34,7 +35,7 @@ function Shape({ gender, r, className, ...rest }) {
   return <path d={`M0 ${-d}L${d} 0L0 ${d}L${-d} 0Z`} className={className} {...rest} />;
 }
 
-export default function StoryGraph({ people, links, a, b, view, stale, onPlayer, onStep, onPick, children }) {
+export default function StoryGraph({ people, links, a, b, view, stale, share, onPlayer, onStep, onPick, children }) {
   const box = useRef(null);
   const svg = useRef(null);
   const width = useWidth(box);
@@ -385,6 +386,8 @@ export default function StoryGraph({ people, links, a, b, view, stale, onPlayer,
       <div className={s.under}>
         <Legend live={!view} links={links.length > 0} solved={solved} example={solved ? [personLabel(view.nodes[0]), view.edges[0], personLabel(view.nodes[1])] : null} />
         {(view || names.length > 0) && (
+          <div className={s.tools}>
+            {share && view && !stale && <ShareButton share={share} />}
           <button type="button" className={s.download} onClick={download} data-state={save} aria-label="Download the map as an image" title="Download the map as a PNG image">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
               {save === 'done'
@@ -393,6 +396,7 @@ export default function StoryGraph({ people, links, a, b, view, stale, onPlayer,
             </svg>
             <span>{save === 'done' ? 'Saved' : save === 'failed' ? 'Try again' : 'Download'}</span>
           </button>
+          </div>
         )}
       </div>
       <span className="visually-hidden" aria-live="polite">{save === 'done' ? 'Image downloaded.' : save === 'failed' ? 'The image could not be saved.' : ''}</span>

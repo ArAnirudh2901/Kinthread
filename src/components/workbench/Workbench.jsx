@@ -1,10 +1,11 @@
 'use client';
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { askModel, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
 import { useModel } from '@/lib/model/useModel';
 import { announce } from '@/lib/kinds';
 import { EXAMPLES } from '@/lib/examples';
 import { prepare, splitQuestion } from '@/lib/exam';
+import { readShare } from '@/lib/share';
 import { MAX_PEOPLE, WORD_LIMIT, countWords } from '@/lib/story';
 import MapPanel from '@/components/map/MapPanel';
 import DevData from './DevData';
@@ -40,11 +41,17 @@ export default function Workbench() {
     return () => window.removeEventListener('kinthread:example', onExample);
   }, []);
 
-  // keep the draft when the user visits another page in this tab (sessionStorage: this device, this tab only)
+  // a shared question (#story=…) wins over the tab's draft; the hash is then removed so later edits are not overwritten
   useEffect(() => {
+    const shared = readShare(location.hash);
+    if (shared) {
+      dispatch({ type: 'example', example: shared });
+      history.replaceState(null, '', location.pathname + location.search);
+      return;
+    }
     try {
       const saved = JSON.parse(sessionStorage.getItem(DRAFT) || 'null');
-      if (saved?.story) dispatch({ type: 'restore', story: saved.story, extra: saved.extra || [], a: saved.a, b: saved.b });
+      if (typeof saved?.story === 'string' && saved.story) dispatch({ type: 'restore', story: saved.story, extra: Array.isArray(saved.extra) ? saved.extra : [], a: saved.a, b: saved.b });
     } catch { /* storage blocked or malformed */ }
   }, []);
   useEffect(() => {
@@ -111,6 +118,14 @@ export default function Workbench() {
     if (r.top > window.innerHeight - 120 || r.bottom < 0) mapRef.current.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
   }, [shownId]);
 
+  // Clear can be undone for a few seconds
+  const [undo, setUndo] = useState(null);
+  useEffect(() => {
+    if (!undo) return;
+    const t = setTimeout(() => setUndo(null), 8000);
+    return () => clearTimeout(t);
+  }, [undo]);
+
   const focusEditor = () => editorRef.current?.focus();
   const focusPicker = (slot) => {
     if (slot) dispatch({ type: 'slot', slot });
@@ -130,8 +145,10 @@ export default function Workbench() {
           tokens={measured ? st.tokens : null}
           maxTokens={maxTokens}
           over={over}
-          onChange={(story) => { const q = splitQuestion(story); dispatch({ type: 'story', story, want: q.a ? { a: q.a, b: q.b } : null }); }}
-          onClear={() => { dispatch({ type: 'clear' }); focusEditor(); }}
+          onChange={(story) => { setUndo(null); const q = splitQuestion(story); dispatch({ type: 'story', story, want: q.a ? { a: q.a, b: q.b } : null }); }}
+          onClear={() => { if (st.story) setUndo({ story: st.story, extra: st.extra, a: st.a, b: st.b }); dispatch({ type: 'clear' }); focusEditor(); }}
+          undo={undo}
+          onUndo={() => { dispatch({ type: 'restore', ...undo }); setUndo(null); focusEditor(); }}
           onSubmit={onTrace}
         />
         <Examples onPick={(example) => dispatch({ type: 'example', example })} />
