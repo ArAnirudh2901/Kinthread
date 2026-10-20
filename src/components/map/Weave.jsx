@@ -22,7 +22,8 @@ export function DownloadStatus({ model, shown, onHide, woven = true }) {
   // "Ready" only once the picture is complete too, so the words never run ahead of the weave
   const ready = model.status === 'ready' && woven && shown >= 1;
   const pct = 100 * shown;
-  const label = ready ? 'The model is on this device' : model.stage === 'init' ? 'Checking the model' : 'Downloading the model';
+  const label = ready ? 'The model is on this device' : model.stage === 'init' ? 'Checking the model'
+    : model.stage === 'retry' ? 'Connection lost, reconnecting\u2026' : 'Downloading the model';
   const detail = ready ? 'Kinthread works offline from here on.'
     : model.total ? `${mb(model.loaded)} of ${mbText(model.total)} · once, then it loads from this device` : 'Starting…';
   return (

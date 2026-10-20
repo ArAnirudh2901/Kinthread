@@ -4,7 +4,7 @@
 //   variant 'hero':  slow turn, follows the pointer a little, pulses run down the lit thread
 //   variant 'weave': threads appear top-down as `progress` goes 0 -> 1 (model download)
 // Stops when off screen or the tab is hidden; draws one still frame for reduced motion.
-import { buildConstellation } from '../constellation-graph.js';
+import { buildConstellation, buildNeuralCone } from '../constellation-graph.js';
 
 const LINE_VS = `
 attribute vec3 a_pos; attribute vec3 a_other; attribute float a_side; attribute vec4 a_color; attribute float a_width;
@@ -87,7 +87,8 @@ function compile(gl, vs, fs) {
 
 /** Returns a controller, or null when WebGL is unavailable (the canvas then stays a plain background). */
 export function createConstellation(canvas, { variant = 'hero', lite = false, still = false, onWoven } = {}) {
-  const graph = buildConstellation({ lite });
+  // the loader is a neural network: a cone of fully connected layers; the hero stays a family
+  const graph = variant === 'weave' ? buildNeuralCone({ lite }) : buildConstellation({ lite });
   const { nodes, edges, path } = graph;
   // centre the family on its middle, and measure the sphere it turns in, so the camera can fit any canvas shape
   const mid = ['x', 'y', 'z'].map((k) => (Math.min(...nodes.map((n) => n[k])) + Math.max(...nodes.map((n) => n[k]))) / 2);

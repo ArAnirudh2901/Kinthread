@@ -77,6 +77,7 @@ function onMessage({ data: m }) {
   if (m.type === 'progress') {
     armQuiet();
     if (m.stage === 'init') return set({ status: 'loading', stage: 'init' });
+    if (m.stage === 'retry') return set({ status: 'loading', stage: 'retry' });   // connection dropped: the worker resumes it
     const restored = m.restored ?? state.restored;
     return set({
       status: 'loading',

@@ -184,3 +184,7 @@ will decide later).
 - 2026-10-20: progress follower caps each frame below 1% (no skipped percent at any speed/fps). Tests: 6 durations
   (0.5 s-10 min) x 30/60/120 fps x steady/bursty/jitter/stalls/latency. Harness network simulator: POST /__profile
   {rate KB/s, jitter, stallEvery KB, stallMs, latency}; `/__loader.html` runs 6 real profiles: all 0 mismatches.
+- 2026-10-20: loader is a neural-network cone (`buildNeuralCone`: 1/3/6/9/12 neurons on rings, radius proportional
+  to depth, adjacent layers fully connected, red path down one side; tests/cone.test.mjs). Worker resumes dropped
+  downloads (Range, waits 1/2/4/8/15 s, "Connection lost, reconnecting…"); harness server supports Range. Live suite
+  (13 profiles incl. spikes, 200 Mbps, connection drop): 0 mismatches/ahead/backwards/skipped, one canvas each.

@@ -103,32 +103,54 @@ function tracker(total) {
   };
 }
 
+// A dropped connection resumes where it stopped (HTTP Range) after a short wait, so a blip on a phone network is
+// invisible. If the server ignores Range the file restarts, but bytes already counted are not counted again, so the
+// reported progress never goes back. Only after every wait has failed does the error reach the page.
+const RETRY_WAITS = [1000, 2000, 4000, 8000, 15000];
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function download(url, size, ctx) {
-  let res;
-  try { res = await fetch(url, { cache: ctx.repair ? 'reload' : 'default' }); }
-  catch (e) { throw new LoadError('network', `Could not download ${url} (${e.message}).`); }
-  if (!res.ok) throw new LoadError(res.status === 404 ? 'missing' : 'network', `${url} returned HTTP ${res.status}.`);
   const buf = new Uint8Array(size);
-  let n = 0;
-  const take = (chunk) => {
-    if (n + chunk.length > size) throw new LoadError('integrity', `${url} is larger than expected.`);
-    buf.set(chunk, n);
-    n += chunk.length;
-    ctx.progress(chunk.length, true);
-  };
-  if (!res.body) take(new Uint8Array(await res.arrayBuffer()));
-  else {
-    const reader = res.body.getReader();
-    for (;;) {
-      let r;
-      try { r = await reader.read(); }
-      catch (e) { throw new LoadError('network', `Download of ${url} was interrupted (${e.message}).`); }
-      if (r.done) break;
-      take(r.value);
+  let have = 0;   // bytes received and counted so far
+  for (let attempt = 0; ; attempt++) {
+    try {
+      let res;
+      try {
+        res = await fetch(url, have
+          ? { cache: 'no-store', headers: { Range: `bytes=${have}-` } }
+          : { cache: ctx.repair ? 'reload' : 'default' });
+      } catch (e) { throw new LoadError('network', `Could not download ${url} (${e.message}).`); }
+      if (res.status === 404) throw new LoadError('missing', `${url} returned HTTP 404.`);
+      if (!res.ok) throw new LoadError('network', `${url} returned HTTP ${res.status}.`);
+      const resumed = have > 0 && res.status === 206 && new RegExp(`^bytes ${have}-`).test(res.headers.get('content-range') || '');
+      let pos = resumed ? have : 0;
+      const take = (chunk) => {
+        if (pos + chunk.length > size) throw new LoadError('integrity', `${url} is larger than expected.`);
+        buf.set(chunk, pos);
+        const end = pos + chunk.length;
+        if (end > have) { ctx.progress(end - Math.max(pos, have), true); have = end; }
+        pos = end;
+      };
+      if (!res.body) take(new Uint8Array(await res.arrayBuffer()));
+      else {
+        const reader = res.body.getReader();
+        for (;;) {
+          let r;
+          try { r = await reader.read(); }
+          catch (e) { throw new LoadError('network', `Download of ${url} was interrupted (${e.message}).`); }
+          if (r.done) break;
+          take(r.value);
+        }
+      }
+      if (pos !== size) throw new LoadError('network', `${url} stopped early (${pos} of ${size} bytes).`);
+      if (attempt) post({ type: 'progress', stage: 'download' });
+      return buf;
+    } catch (e) {
+      if (e.code !== 'network' || attempt >= RETRY_WAITS.length) throw e;
+      post({ type: 'progress', stage: 'retry' });
+      await wait(RETRY_WAITS[attempt]);
     }
   }
-  if (n !== size) throw new LoadError('integrity', `${url} is incomplete (${n} of ${size} bytes).`);
-  return buf;
 }
 
 async function getFile(f, ctx) {

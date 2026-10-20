@@ -10,6 +10,18 @@ function rng(seed) { return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) 
 // raw(t) for a download that takes `total` seconds, shaped by the network pattern
 function network(pattern, total, rand) {
   if (pattern === 'steady') return (t) => Math.min(1, t / total);
+  // sudden spikes: a slow line (rate 1) with random bursts at 20x for 0.2 s
+  if (pattern === 'spikes') {
+    const seg = 0.2, n = Math.ceil(total / seg) + 2;
+    const rates = Array.from({ length: n }, () => (rand() < 0.15 ? 20 : 1));
+    const sum = rates.slice(0, Math.ceil(total / seg)).reduce((x, y) => x + y, 0);
+    return (t) => {
+      if (t >= total) return 1;
+      let acc = 0, k = 0;
+      for (; (k + 1) * seg <= t; k++) acc += rates[k];
+      return Math.min(1, (acc + rates[k] * ((t - k * seg) / seg)) / sum);
+    };
+  }
   if (pattern === 'bursty') { const step = total / 4; return (t) => Math.min(1, Math.floor(t / step) * 0.26 + (t >= total ? 1 : 0)); }
   if (pattern === 'latency') { const wait = Math.min(3, total / 3); return (t) => (t < wait ? 0 : Math.min(1, (t - wait) / (total - wait))); }
   if (pattern === 'stalls') return (t) => { const cycle = total / 5, inCycle = t % cycle; const done = Math.floor(t / cycle) * 0.2 + Math.min(0.2, (inCycle / (cycle * 0.6)) * 0.2); return Math.min(1, t >= total ? 1 : done); };
@@ -35,9 +47,9 @@ function run(rawAt, seconds, fps) {
   return frames;
 }
 
-const DURATIONS = [0.5, 1, 3, 10, 60, 600];
+const DURATIONS = [0.2, 0.5, 1, 3, 10, 60, 600];   // 0.2 s: a constant very high speed (~2.5 Gbit/s for 61 MB)
 const FPS = [30, 60, 120];
-const PATTERNS = ['steady', 'bursty', 'jitter', 'stalls', 'latency'];
+const PATTERNS = ['steady', 'bursty', 'jitter', 'spikes', 'stalls', 'latency'];
 
 for (const pattern of PATTERNS) {
   test(`${pattern}: every duration and frame rate keeps the guarantees`, () => {
