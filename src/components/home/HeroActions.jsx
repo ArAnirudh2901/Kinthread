@@ -1,13 +1,18 @@
 'use client';
 import Link from 'next/link';
+import { scrollToTarget } from '@/lib/smooth-scroll';
+import { modelStore } from '@/lib/model/client';
+import { requestModel } from '@/lib/model/gate';
 import s from './HeroActions.module.css';
 
 // Primary: load an example and bring the workbench into view (Workbench listens for 'kinthread:example').
 export default function HeroActions() {
-  const tryIt = () => {
+  const tryIt = (e) => {
     window.dispatchEvent(new CustomEvent('kinthread:example', { detail: 'short' }));
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.getElementById('workbench')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    const toBench = () => scrollToTarget(document.getElementById('workbench'));
+    // first time: the model window grows out of this button, and the page moves to the answer after it closes
+    if (modelStore.get().status !== 'ready') requestModel(e.currentTarget, { then: toBench });
+    else toBench();
   };
   return (
     <div className={s.actions}>

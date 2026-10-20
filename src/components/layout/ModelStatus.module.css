@@ -1,9 +1,11 @@
 .pill {
+  position: relative; isolation: isolate;
+  transition: border-color var(--t) var(--ease);
   display: none;
   align-items: center; gap: 8px;
   height: 32px; padding: 0 12px;
   border: 1px solid var(--line); border-radius: 999px;
-  font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.04em;
+  font: 500 var(--fs-label)/1 var(--font-ui);
   color: var(--text-2); white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -12,3 +14,4 @@
 .pill[data-tone="ready"] .dot { background: var(--answer); }
 .pill[data-tone="busy"] .dot { background: var(--fact); }
 .pill[data-tone="error"] .dot { background: var(--question); }
+.fill { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: rgb(var(--answer-rgb) / 0.16); transform-origin: left; transition: transform 0.3s linear; }

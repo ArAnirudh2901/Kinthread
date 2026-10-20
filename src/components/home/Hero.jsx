@@ -11,7 +11,6 @@ export default function Hero() {
       <Constellation variant="hero" className={s.scene} />
       <div className={`container ${s.inner}`}>
         <div className={s.text}>
-          <p className="eyebrow">Blood-relation puzzles, solved step by step</p>
           <h1 id="hero-title" className={`display ${s.title}`}>
             {WORDS.map((w, i) => (
               <span key={w} className={s.word} style={{ '--i': i }}>
@@ -19,7 +18,7 @@ export default function Hero() {
               </span>
             ))}
           </h1>
-          <p className={s.lede}>Give Kinthread a family story. Watch it trace how two people are related, with a from-scratch AI that runs on your device.</p>
+          <p className={s.lede}>Blood-relation puzzles, solved step by step. Give Kinthread a family story and watch it trace how two people are related, with a from-scratch AI that runs on your device.</p>
           <HeroActions />
         </div>
       </div>

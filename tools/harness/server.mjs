@@ -17,15 +17,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // One shared line for all model downloads, like a real connection: { mbps | schedule: [[seconds, mbps], ...] (cycled),
 // rtt (ms per request), jitter (0-1), stallEveryMB + stallMs, skip (share of each part sent at once: jump to the end
 // game of a slow download), dropAtMB (cut the connection once, mid-download) }
-function rateAt(t) {
-  if (!profile.schedule) return profile.mbps * 125000;
-  const cycle = profile.schedule.reduce((x, [s]) => x + s, 0);
+function rateAt(t, p) {
+  if (!p.schedule) return p.mbps * 125000;
+  const cycle = p.schedule.reduce((x, [s]) => x + s, 0);
   let k = ((t - net.start) / 1000) % cycle;
-  for (const [s, mbps] of profile.schedule) { if (k < s) return mbps * 125000; k -= s; }
-  return profile.schedule[0][1] * 125000;
+  for (const [s, mbps] of p.schedule) { if (k < s) return mbps * 125000; k -= s; }
+  return p.schedule[0][1] * 125000;
 }
+// each download keeps the profile it started with: resetting it mid-download must not crash the server
 async function throttled(res, buf) {
-  const { rtt = 0, jitter = 0, stallEveryMB = 0, stallMs = 0, skip = 0, dropAtMB = 0 } = profile;
+  const p = profile;
+  const { rtt = 0, jitter = 0, stallEveryMB = 0, stallMs = 0, skip = 0, dropAtMB = 0 } = p;
   if (rtt) await sleep(rtt);
   const first = Math.floor(buf.length * skip);
   if (first) { res.write(buf.subarray(0, first)); net.served += first; }
@@ -34,14 +36,15 @@ async function throttled(res, buf) {
     if (res.destroyed) return;
     const n = Math.min(chunk, buf.length - i);
     // reserve time on the shared line; a dead zone (0 Mbps) waits for the next live segment
-    let start = Math.max(Date.now(), net.free), rate = rateAt(start);
-    while (rate === 0) { start += 250; rate = rateAt(start); }
+    let start = Math.max(Date.now(), net.free), rate = rateAt(start, p);
+    while (rate === 0) { start += 250; rate = rateAt(start, p); }
     net.free = start + (n / rate) * 1000 * Math.max(0.05, 1 + jitter * (Math.random() * 2 - 1));
     const stallsBefore = stallEveryMB ? Math.floor(net.served / (stallEveryMB * 1e6)) : 0;
     net.served += n;
     if (stallEveryMB && Math.floor(net.served / (stallEveryMB * 1e6)) > stallsBefore) net.free += stallMs;
     await sleep(net.free - Date.now());
     if (dropAtMB && !net.dropped && net.served >= dropAtMB * 1e6) { net.dropped = true; res.destroy(); return; }
+    if (res.destroyed) return;
     res.write(buf.subarray(i, i + n));
   }
   res.end();
@@ -74,14 +77,14 @@ createServer(async (req, res) => {
     if ((await stat(p)).isDirectory()) p = path.join(p, 'index.html');
     let buf = await readFile(p);
     const range = /^bytes=(\d+)-$/.exec(req.headers.range || '');
-    if (range && +range[1] < buf.length) {
+    if (range && !profile?.noRange && +range[1] < buf.length) {   // noRange: behave like Cloudflare Pages
       const start = +range[1], whole = buf.length;
       buf = buf.subarray(start);
       res.statusCode = 206;
       res.setHeader('Content-Range', `bytes ${start}-${whole - 1}/${whole}`);
     }
     res.writeHead(res.statusCode === 206 ? 206 : 200, { ...h, 'Accept-Ranges': 'bytes', 'Content-Type': types[path.extname(p)] || 'application/octet-stream', 'Content-Length': buf.length });
-    if (profile && url.pathname.startsWith('/m/')) { await throttled(res, buf); return; }
+    if (profile && url.pathname.startsWith('/m/')) { await throttled(res, buf).catch(() => res.destroy()); return; }
     if (!slow || !url.pathname.startsWith('/m/')) { res.end(buf); return; }
     for (let i = 0; i < buf.length; i += 1 << 20) { res.write(buf.subarray(i, i + (1 << 20))); await new Promise((r) => setTimeout(r, slow)); }
     res.end();

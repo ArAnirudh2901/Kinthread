@@ -1,7 +1,10 @@
 'use client';
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
+import { scrollToTarget } from '@/lib/smooth-scroll';
 import { askModel, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
 import { useModel } from '@/lib/model/useModel';
+import { gateStore, requestModel } from '@/lib/model/gate';
+import { mbText } from '@/lib/format';
 import { announce } from '@/lib/kinds';
 import { EXAMPLES } from '@/lib/examples';
 import { prepare, splitQuestion } from '@/lib/exam';
@@ -61,8 +64,10 @@ export default function Workbench() {
     } catch { /* storage blocked: the draft just is not kept */ }
   }, [st.story, st.extra, st.a, st.b]);
 
-  // names: re-detect shortly after typing stops (immediately for examples)
-  const ready = model.status === 'ready';
+  // names: re-detect shortly after typing stops (immediately for examples). While the model window is still on screen
+  // nothing runs, so the answer builds in view once it has shrunk back into the button.
+  const gateOpen = useSyncExternalStore(gateStore.subscribe, gateStore.open, gateStore.serverOpen);
+  const ready = model.status === 'ready' && !gateOpen;
   useEffect(() => {
     if (!ready) return;
     const id = ++detectSeq.current;
@@ -82,9 +87,11 @@ export default function Workbench() {
   const measured = st.detected === st.story;
   const over = measured ? st.tokens > maxTokens : words > WORD_LIMIT;
   const running = st.run?.status === 'running';
-  const reason = !ready ? (model.status === 'error' ? 'The model could not load. See the map panel.'
-    : model.status === 'idle' ? 'Download the model first (one time), then solve.' : 'The model is still loading. You can write your story meanwhile.')
+  // without the model, Solve stays available: pressing it opens the download window (lib/model/gate.js)
+  const reason = model.status === 'error' ? 'The model could not load. See the map panel.'
     : !st.story.trim() ? 'Write a story or load an example.'
+      : !ready && over ? 'The story is longer than the model can read. Shorten it to solve.'
+      : !ready ? null
       : over ? 'The story is longer than the model can read. Shorten it to solve.'
         : !measured ? 'Finding the people in your story\u2026'
           : st.people.length > MAX_PEOPLE ? `The model can follow at most ${MAX_PEOPLE} people in one story; this one has ${st.people.length}. Shorten it to solve.`
@@ -103,8 +110,20 @@ export default function Workbench() {
     }
   }, []);
 
+  const note = !ready && !reason && model.status !== 'ready'
+    ? (model.status === 'idle' ? `Solving downloads the AI once (${mbText(model.total)}), then it runs on this device.` : 'The AI is loading. Solve shows its progress.')
+    : null;
   const canTrace = !reason && !running;
-  const onTrace = () => { if (canTrace) trace(st); };
+  const solveAfterLoad = useRef(null);   // autoRun count when Solve asked for the model
+  const onTrace = (e) => {
+    if (!canTrace) return;
+    if (model.status !== 'ready' || gateOpen) {
+      solveAfterLoad.current = st.autoRun;
+      requestModel(e?.currentTarget || document.querySelector('[data-solve]'));
+      return;
+    }
+    trace(st);
+  };
 
   // examples trace once their people are detected; picking both people (or swapping) traces at once
   useEffect(() => { if (st.autoRun && !reason) trace(st); }, [st.autoRun]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -114,8 +133,7 @@ export default function Workbench() {
   useEffect(() => {
     if (!shownId || !mapRef.current) return;
     const r = mapRef.current.getBoundingClientRect();
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (r.top > window.innerHeight - 120 || r.bottom < 0) mapRef.current.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    if (r.top > window.innerHeight - 120 || r.bottom < 0) scrollToTarget(mapRef.current);
   }, [shownId]);
 
   // Clear can be undone for a few seconds
@@ -132,6 +150,16 @@ export default function Workbench() {
     pickerRef.current?.focus();
   };
 
+  // after the window closes: solve if both people are known (unless an example or question is already solving),
+  // otherwise point at the picker
+  useEffect(() => {
+    if (!ready || !measured || solveAfterLoad.current == null) return;
+    const clicked = solveAfterLoad.current;
+    solveAfterLoad.current = null;
+    if (st.autoRun !== clicked) return;
+    if (!reason) trace(st);
+    else if (!st.a || !st.b) focusPicker();
+  }, [ready, measured, reason]); // eslint-disable-line react-hooks/exhaustive-deps
   const message = st.run?.status === 'done' ? announce(st.run) : st.run?.status === 'error' ? 'Solving failed.' : '';
 
   return (
@@ -151,7 +179,7 @@ export default function Workbench() {
           onUndo={() => { dispatch({ type: 'restore', ...undo }); setUndo(null); focusEditor(); }}
           onSubmit={onTrace}
         />
-        <Examples onPick={(example) => dispatch({ type: 'example', example })} />
+        <Examples onPick={(example, el) => { dispatch({ type: 'example', example }); if (model.status !== 'ready') requestModel(el); }} />
         {process.env.NODE_ENV !== 'production' && <DevData dispatch={dispatch} demo={EXAMPLES[0]} />}
         <PeoplePicker
           ref={pickerRef}
@@ -160,7 +188,7 @@ export default function Workbench() {
           measured={measured}
           dispatch={dispatch}
         />
-        <TraceBar reason={reason} running={running} canTrace={canTrace} onTrace={onTrace} />
+        <TraceBar reason={reason} note={note} running={running} canTrace={canTrace} onTrace={onTrace} />
       </div>
       <div className={s.output} ref={mapRef}>
         <MapPanel

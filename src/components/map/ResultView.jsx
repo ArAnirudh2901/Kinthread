@@ -63,7 +63,7 @@ function Reveal({ show, children }) {
   useGSAP(() => {
     if (!show) return;
     if (prefersReducedMotion()) { gsap.set(el.current, { autoAlpha: 1 }); return; }
-    gsap.fromTo(el.current.children, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'expo.out', stagger: 0.05 });
+    gsap.fromTo(el.current.children, { autoAlpha: 0, filter: 'blur(6px)' }, { autoAlpha: 1, filter: 'blur(0px)', duration: 0.42, ease: 'power3.out', stagger: 0.05, clearProps: 'filter' });
   }, { dependencies: [show], scope: el });
   return <div ref={el} className={s.copy} data-pending={!show || undefined}>{children}</div>;
 }
@@ -81,11 +81,11 @@ export function Headline({ run, shown, tentative }) {
   }
   return (
     <Reveal show>
-      <Badge result={r} />
       <h3 className={`display ${s.headline}`}>
         {tentative ? 'My best guess: ' : ''}{b} is {possessive(a)}{' '}
         {tentative ? <span className={s.guess}>{r.relation}</span> : <mark className={s.relation}>{r.relation}</mark>}.
       </h3>
+      <Badge result={r} />
     </Reveal>
   );
 }
@@ -119,8 +119,8 @@ function Unknown({ run, info, shown, onEditStory, onChoose }) {
   return (
     <>
       <Reveal show={shown}>
-        <Badge result={r} />
         <h3 className={`display ${s.headline}`}>The story doesn&rsquo;t establish a relationship between {a} and {b}.</h3>
+        <Badge result={r} />
         <p className={s.lede}>
           {byRule
             ? `${a} and ${b} are never mentioned together, or through people who are, so nothing in the text connects them.`

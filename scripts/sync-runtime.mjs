@@ -12,8 +12,9 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const src = path.resolve(process.env.KINSHIP_SRC || path.join(root, '../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM'));
 const VENDOR = path.join(root, 'vendor/kinship');
-// Cloudflare Pages rejects files over 25 MiB; parts also download in parallel.
-const PART_BYTES = 16 * 1024 * 1024;
+// Small parts: Cloudflare Pages ignores Range, so a dropped connection re-downloads whole in-flight parts
+// (3 at a time); 2 MiB caps that loss at 6 MiB. Pages also rejects files over 25 MiB.
+const PART_BYTES = 2 * 1024 * 1024;
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 const fail = (msg) => { console.error(`sync-runtime: ${msg}`); process.exit(1); };
@@ -78,7 +79,7 @@ if (fromRepo) {
 }
 
 const digest = (files) => sha256(Object.keys(files).sort().map((k) => `${k}:${sha256(files[k])}`).join('\n')).slice(0, 12);
-const rVer = digest(runtime), mVer = digest(model);
+const rVer = digest(runtime);
 
 // 3. model parts
 const files = {};
@@ -97,6 +98,9 @@ for (const name of ['qa', 'tagger']) {
   files[name] = { json: { file: `${name}.json`, bytes: json.length, sha256: sha256(json) }, parts, bytes: gz.length };
   totalBytes += gz.length + model[`${name}.json`].length;
 }
+
+// version from the served parts, not the model: a new part size must get a new folder and cache key
+const mVer = digest(mFiles);
 
 // 4. write (skipped when the hashed folder already exists), drop stale versions
 async function writeDir(kind, ver, contents) {

@@ -18,10 +18,13 @@ const PROFILES = [
   { name: 'Spikes: 0.5 Mbps with 100 Mbps bursts (from 60%)', p: { schedule: [[4, 0.5], [1, 100]], rtt: 120, skip: 0.6 }, limit: 75 },
   { name: 'Constant 200 Mbps', p: { mbps: 200, rtt: 10 }, limit: 30 },
   { name: 'Connection drops at 25 MB (9 Mbps)', p: { mbps: 9, rtt: 85, dropAtMB: 25 }, limit: 120 },
+  { name: 'Drop at 25 MB, Range ignored (like Pages)', p: { mbps: 9, rtt: 85, dropAtMB: 25, noRange: true }, limit: 120 },
 ];
 const log = (s) => { document.getElementById('log').textContent += s + '\n'; };
 const results = [];
-for (const { name, p, limit } of PROFILES) {
+// ?only=0,2,13 runs a subset
+const only = new URLSearchParams(location.search).get('only')?.split(',');
+for (const { name, p, limit } of only ? PROFILES.filter((_, i) => only.includes(String(i))) : PROFILES) {
   await fetch('/__profile', { method: 'POST', body: p ? JSON.stringify(p) : '' });
   localStorage.removeItem('kinthread-model');
   for (const k of await caches.keys()) await caches.delete(k);
@@ -31,8 +34,10 @@ for (const { name, p, limit } of PROFILES) {
   document.body.prepend(f);
   await new Promise((r) => (f.onload = () => setTimeout(r, 2500)));
   const W = f.contentWindow, d = f.contentDocument.querySelector('dialog');
-  [...d.querySelectorAll('button')].find((b) => /Download/.test(b.textContent)).click();
-  const s = { name, maxLag: 0, rawDone: null, error: 0, retried: 0, frames: 0, mismatch: 0, ahead: 0, backwards: 0, skipped: 0, canvases: new Set(), maxStep: 0, hit100: null, ready: null, readyBefore100: false, last: -1, lastW: 0, finished: false };
+  // the window opens when something asks for the model: an example, like a visitor would
+  [...f.contentDocument.querySelectorAll('button')].find((b) => /^Two steps/.test(b.textContent.trim())).click();
+  await new Promise((r) => { const t0 = performance.now(); const w = () => (d.open || performance.now() - t0 > 3000 ? r() : requestAnimationFrame(w)); w(); });
+  const s = { name, maxLag: 0, rawDone: null, error: 0, retried: 0, frames: 0, mismatch: 0, ahead: 0, backwards: 0, skipped: 0, canvases: new Set(), maxStep: 0, hit100: null, ready: null, readyBefore100: false, labelBack: 0, phase: 0, last: -1, lastW: 0, finished: false };
   const t0 = performance.now();
   await new Promise((done) => {
     const tick = () => {
@@ -42,6 +47,10 @@ for (const { name, p, limit } of PROFILES) {
       const txt = d.querySelector('[class*=count]')?.textContent || '';
       const m = (d.querySelector('[class*=detail]')?.textContent || '').match(/([\d.]+) of ([\d.]+)/);
       const retry = [...d.querySelectorAll('button')].find((b) => /Try again/.test(b.textContent));
+      // label must only move forward: downloading/reconnecting -> checking -> on this device
+      const phase = /on this device/.test(d.textContent) ? 2 : /Checking the model/.test(d.textContent) ? 1 : 0;
+      if (phase < s.phase) s.labelBack++;
+      s.phase = Math.max(s.phase, phase);
       if (retry) { s.error++; if (!s.waitingRetry) { s.waitingRetry = true; setTimeout(() => { s.retried++; s.waitingRetry = false; retry.click(); }, 1000); } }
       if (cv && /%/.test(txt)) {
         s.frames++; s.canvases.add(cv);

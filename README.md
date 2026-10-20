@@ -1,6 +1,6 @@
 # Kinthread
 
-**Blood-relation puzzles, solved step by step.**
+**Blood-relation puzzles, solved step by step.** Live at **https://kinthread.pages.dev**
 
 Kinthread reads a short family story, or a textbook question like *"A is the brother of B. C is the father of A. How
 is C related to B?"*, and works out how two people are related. It shows the working the way you would write it on
@@ -42,9 +42,10 @@ device; there is no server, account or API key.
    As soon as both blanks are filled, it solves.
 3. **See how they're related.** The map rebuilds as a family tree, with parents above and children below, and plays
    the reasoning one step at a time:
-   - **indigo** for the question: a dashed arrow with a "?";
-   - **gold** for facts from the story, numbered in reasoning order, each quoted from the sentence it came from;
-   - **red** for the answer: the red thread that replaces the question.
+   - **white chalk** for the question: a dashed arrow with a "?";
+   - **blue chalk** for facts from the story, numbered in reasoning order, each quoted from the sentence it came from;
+   - **yellow chalk** for the answer: the thread that replaces the question (on the light theme, a yellow
+     highlighter under the answer line).
 
    People are drawn as in biology pedigree charts: squares are male, circles female, and a diamond means the story
    never says. A caption narrates each step ("So Helen is Victor's father's wife, which makes Helen Victor's mother"),
@@ -171,27 +172,29 @@ bun run check
 
 ## Deploying
 
-The site is a static folder (`out/`), built for Cloudflare Pages. The model files are not in git, so deploy by
-direct upload from a machine that has them:
+The site is a static folder (`out/`) on Cloudflare Pages at https://kinthread.pages.dev, deployed by direct upload:
 
 ```bash
-bunx wrangler whoami                     # make sure it is the account that should own the site
-bun run build
-bunx wrangler pages deploy out --project-name kinthread
+bunx wrangler whoami   # must be the account that owns the kinthread project
+bun run deploy         # build, then wrangler pages deploy out --project-name kinthread --branch main
 ```
 
-Set `SITE_URL` at build time (for example `SITE_URL=https://kinthread.pages.dev bun run build`) so link previews
-use the right domain.
+The project was created once with `bunx wrangler pages project create kinthread --production-branch main`. Recent
+wrangler versions turn that command into a Workers project (a longer `*.workers.dev` address) when an AI agent runs
+it; `--force` keeps classic Pages. `SITE_URL` (default `https://kinthread.pages.dev`) sets the address used in link
+previews, `robots.txt` and `sitemap.xml`.
 
 The build already handles:
 
 - **Threads:** `_headers` sends `Cross-Origin-Opener-Policy: same-origin` and
   `Cross-Origin-Embedder-Policy: require-corp`, which multi-threaded WebAssembly needs. Without them the
   single-threaded engine runs automatically, about 2× slower.
-- **File limits:** weights are split into parts of at most 16 MiB (Cloudflare allows 25 MiB per file).
+- **File limits and dropped connections:** weights are split into 2 MiB parts (Cloudflare allows 25 MiB per file).
+  Pages ignores HTTP Range, so a dropped connection re-downloads only the parts in flight (at most 6 MiB).
 - **Caching:** hashed folders are immutable for a year; pages and the service worker revalidate.
 - **Security:** each page carries a Content-Security-Policy with the exact hashes of its inline scripts, plus
   `X-Frame-Options: DENY`.
+- **Sharing and search:** a 1200×630 preview image, an Apple touch icon, `robots.txt` and `sitemap.xml`.
 
 ## Performance
 

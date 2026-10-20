@@ -1,10 +1,10 @@
-// 3D family constellation in raw WebGL (1 or 2; no library). One draw call for all threads (screen-space
+// 3D neural-network cone in raw WebGL (1 or 2; no library). One draw call for all threads (screen-space
 // thick lines built from triangles), one for people (soft point sprites), one for light pulses.
 // Per frame the CPU only updates a 4x4 matrix and at most 8 pulse points.
-//   variant 'hero':  slow turn, follows the pointer a little, pulses run down the lit thread
+//   variant 'hero':  fully woven in the answer colour; slow turn, follows the pointer, pulses run down the answer path
 //   variant 'weave': threads appear top-down as `progress` goes 0 -> 1 (model download)
 // Stops when off screen or the tab is hidden; draws one still frame for reduced motion.
-import { buildConstellation, buildNeuralCone } from '../constellation-graph.js';
+import { buildNeuralCone } from '../constellation-graph.js';
 
 const LINE_VS = `
 attribute vec3 a_pos; attribute vec3 a_other; attribute float a_side; attribute vec4 a_color; attribute float a_width;
@@ -45,8 +45,8 @@ void main() {
 const hex = (h, a = 1) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255, a];
 // dark: light threads glowing additively; light: ink threads laid over paper
 const PALETTES = {
-  dark: { thread: hex('#b2ac9e', 0.16), spouse: hex('#e2b04a', 0.22), lit: hex('#ee5a40', 0.9), sea: hex('#e2b04a', 0.95), copper: hex('#8fa2e6', 1), lichen: hex('#ee5a40', 1), pulse: hex('#ffd2c4', 1), additive: true },
-  light: { thread: hex('#1a2033', 0.13), spouse: hex('#865c05', 0.28), lit: hex('#b5311e', 0.85), sea: hex('#865c05', 0.9), copper: hex('#3b4da6', 1), lichen: hex('#b5311e', 1), pulse: hex('#b5311e', 1), additive: false },
+  dark: { thread: hex('#a9b9ae', 0.16), lit: hex('#f3d34a', 0.9), copper: hex('#e4ebe2', 1), lichen: hex('#f3d34a', 1), pulse: hex('#fff7d1', 1), additive: true },
+  light: { thread: hex('#14231b', 0.13), lit: hex('#7d5f00', 0.85), copper: hex('#2e4237', 1), lichen: hex('#7d5f00', 1), pulse: hex('#7d5f00', 1), additive: false },
 };
 const FOVY = 0.62;
 const FILL = 0.8;
@@ -87,8 +87,8 @@ function compile(gl, vs, fs) {
 
 /** Returns a controller, or null when WebGL is unavailable (the canvas then stays a plain background). */
 export function createConstellation(canvas, { variant = 'hero', lite = false, still = false, onWoven } = {}) {
-  // the loader is a neural network: a cone of fully connected layers; the hero stays a family
-  const graph = variant === 'weave' ? buildNeuralCone({ lite }) : buildConstellation({ lite });
+  // a cone of fully connected layers; the hero shows it woven, the loader weaves it as bytes arrive
+  const graph = buildNeuralCone({ lite });
   const { nodes, edges, path } = graph;
   // centre the family on its middle, and measure the sphere it turns in, so the camera can fit any canvas shape
   const mid = ['x', 'y', 'z'].map((k) => (Math.min(...nodes.map((n) => n[k])) + Math.max(...nodes.map((n) => n[k]))) / 2);
@@ -129,16 +129,18 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     }
   }
   const nodeOrder = nodes.map((_, i) => i).sort((a, b) => firstEdge[a] - firstEdge[b]);
-  // the loader: woven threads and the people they reach turn red, so a red network grows out of the first person;
-  // threads still to come wait in neutral grey. The answer path stays the brightest and thickest red.
-  const weave = variant === 'weave';
+  // the loader: woven threads and the people they reach take the answer colour, so the network grows out of the first person;
+  // threads still to come wait in neutral grey. The answer path stays the brightest and thickest.
   const withAlpha = (c, a) => [c[0], c[1], c[2], c[3] * a];
-  const edgeStyle = (k, e) => ({
-    col: onPath.has(k) ? C.lit : weave ? withAlpha(C.lit, 0.6) : e.kind === 'spouse' ? C.spouse : C.thread,
-    w: onPath.has(k) ? 2.4 : weave ? 1.5 : 1.1,
+  const weave = variant === 'weave';
+  const edgeStyle = (k) => ({
+    // soft yellow: the answer path carries the colour, the rest is a faint wash (stronger while weaving, so woven
+    // threads stay clearly ahead of the grey ones still to come)
+    col: onPath.has(k) ? C.lit : withAlpha(C.lit, weave ? 0.5 : 0.2),
+    w: onPath.has(k) ? 2.4 : 1.4,
   });
   const nodeStyle = (i) => ({
-    col: i === graph.top ? C.copper : i === graph.leaf || pathNodes.has(i) || weave ? C.lichen : C.sea,
+    col: i === graph.top ? C.copper : pathNodes.has(i) || weave ? C.lichen : withAlpha(C.lichen, 0.7),
     size: i === graph.top || i === graph.leaf ? 9 : pathNodes.has(i) ? 6.5 : 5,
   });
   let woven = false;
@@ -171,7 +173,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   function upload() {
     // threads: 4 vertices per edge, 12 floats each
     const lv = new Float32Array(edges.length * 4 * 12), lg = new Float32Array(edges.length * 4 * 12), li = new Uint16Array(edges.length * 6);
-    const waiting = withAlpha(C.thread, 1.7);   // weave: threads not woven yet
+    const waiting = withAlpha(C.thread, 1.2);   // weave: threads not woven yet
     edges.forEach((e, k) => {
       const A = nodes[e.a], B = nodes[e.b], { col, w } = edgeStyle(k, e);
       const verts = [[A, B, 1], [A, B, -1], [B, A, -1], [B, A, 1]];

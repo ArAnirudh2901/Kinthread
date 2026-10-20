@@ -8,9 +8,9 @@
 @media (hover: hover) and (pointer: fine) { .toggle:hover { background: var(--surface); border-color: var(--line-strong); } }
 .toggle:active { transform: scale(0.92); }
 /* icons swap with a turn: the sun shows in dark mode (to switch to light), the moon in light mode */
-.toggle svg { grid-area: 1 / 1; transition: opacity 0.35s var(--ease), transform 0.5s var(--spring); }
+.toggle svg { grid-area: 1 / 1; transition: opacity 0.35s var(--ease), transform 0.5s var(--ease), filter 0.35s var(--ease); }
 .sun { opacity: 1; transform: none; }
-.moon { opacity: 0; transform: rotate(-90deg) scale(0.6); }
-:global(:root[data-theme="light"]) .sun { opacity: 0; transform: rotate(90deg) scale(0.6); }
-:global(:root[data-theme="light"]) .moon { opacity: 1; transform: none; }
+.moon { opacity: 0; transform: rotate(-90deg) scale(0.6); filter: blur(3px); }
+:global(:root[data-theme="light"]) .sun { opacity: 0; transform: rotate(90deg) scale(0.6); filter: blur(3px); }
+:global(:root[data-theme="light"]) .moon { opacity: 1; transform: none; filter: none; }
 @media (hover: hover) and (pointer: fine) { .toggle:hover .sun { transform: rotate(45deg); } }

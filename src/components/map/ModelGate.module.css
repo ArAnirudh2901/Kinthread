@@ -4,8 +4,13 @@
   padding: max(20px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
   background: var(--bg); color: var(--ink); overflow: hidden;
 }
-.gate[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); justify-items: center; gap: 12px; animation: gate-in 260ms var(--ease); }
-.gate::backdrop { background: var(--bg); }
-@keyframes gate-in { from { opacity: 0; transform: scale(0.99); } }
+.gate[open] { display: block; }
+/* the page stays visible around the shape while it grows (ModelGate's morph); the window itself covers it after */
+.gate::backdrop { background: transparent; }
+/* focus is placed on the window for screen readers; it is not a control, so no ring */
+.gate:focus, .gate:focus-visible, .body:focus, .body:focus-visible { outline: none; }
+.body { outline: none; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); justify-items: center; gap: 12px; }
+/* the control's colour and its label, laid over the growing shape and faded out (or in, when it shrinks back) */
+.skin, .ghost { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
 /* the brand where an app puts it: a small wordmark at the top, centred */
 .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; letter-spacing: -0.01em; color: var(--ink); }

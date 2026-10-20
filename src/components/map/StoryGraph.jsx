@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useShapeMorph } from '@/lib/useShapeMorph';
 import { downloadMap } from '@/lib/export-image';
 import ShareButton from './ShareButton';
 import { GraphEngine } from '@/lib/graph/engine';
@@ -35,7 +36,7 @@ function Shape({ gender, r, className, ...rest }) {
   return <path d={`M0 ${-d}L${d} 0L0 ${d}L${-d} 0Z`} className={className} {...rest} />;
 }
 
-export default function StoryGraph({ people, links, a, b, view, stale, share, onPlayer, onStep, onPick, children }) {
+export default function StoryGraph({ people, links, relations = {}, a, b, view, stale, share, onPlayer, onStep, onPick, children }) {
   const box = useRef(null);
   const svg = useRef(null);
   const width = useWidth(box);
@@ -46,6 +47,7 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
   const playerCb = useRef(onPlayer);
   useEffect(() => { stepCb.current = onStep; playerCb.current = onPlayer; });
   const titleId = useId();
+  const arrowId = `${titleId.replace(/[^\w-]/g, '')}-arrow`;
   const api = useRef(null);   // this graph's own playback controls (also handed up through onPlayer)
   const resume = useRef({ runKey: null, time: 0, playing: false });   // keep the playhead across re-layouts (resize, fonts)
 
@@ -102,7 +104,8 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
       ctx.ignore(() => {
         e.setTargets(null, { instant: mode === 'none' });
         // live map: nobody may stay hidden by a previous worked answer's timeline
-        gsap.set(gsap.utils.selector(svg)('[data-name] > g'), { clearProps: 'opacity,visibility,transform' });
+        const people = gsap.utils.selector(svg)('[data-name] > g');
+        if (people.length) gsap.set(people, { clearProps: 'opacity,visibility,transform' });
       });
       return;
     }
@@ -114,41 +117,43 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
 
     const q = gsap.utils.selector(svg);
     const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
+    // optional parts (later reveals, stub, halo) are absent on some maps: skip those tweens, no GSAP warning
+    const add = (method, sel, ...args) => { const els = q(sel); if (els.length) tl[method](els, ...args); };
     const stops = [];
     let t = reduce || again ? 0 : 0.6;   // let the people glide into place first
-    const pop = { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(1.4)' };
-    const hidden = { autoAlpha: 0, scale: 0.55, transformOrigin: '50% 50%' };
+    const pop = { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'power3.out' };
+    const hidden = { autoAlpha: 0, scale: 0.85, transformOrigin: '50% 50%' };
 
     // 0. the question: A and B, and a dashed "?" between them
-    tl.set(q('[data-later]'), { autoAlpha: 0 }, 0);
-    tl.set(q('[data-draw]'), { autoAlpha: 1 }, 0);
-    tl.fromTo(q('[data-q-path]'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.6 }, t);
-    tl.fromTo(q('[data-q-mark]'), hidden, pop, t + 0.4);
+    add('set', '[data-later]', { autoAlpha: 0 }, 0);
+    add('set', '[data-draw]', { autoAlpha: 1 }, 0);
+    add('fromTo', '[data-q-path]', { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.6 }, t);
+    add('fromTo', '[data-q-mark]', hidden, pop, t + 0.4);
     t += 0.85;
     stops.push(t);
     // 1..k. one fact at a time, in the order the reasoning uses them
     (solved ? view.edges : []).forEach((_, i) => {
       t += 0.5;
-      tl.fromTo(q(`[data-fact="${i}"] [data-line]`), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.55 }, t);
-      tl.fromTo(q(`[data-fact="${i}"] [data-head]`), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, t + 0.5);
-      tl.fromTo(q(`[data-fact="${i}"] [data-tag]`), hidden, pop, t + 0.3);
-      tl.fromTo(q(`[data-reveal="${i + 1}"]`), hidden, pop, t + 0.42);
+      add('fromTo', `[data-fact="${i}"] [data-line]`, { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.55 }, t);
+      add('fromTo', `[data-fact="${i}"] [data-head]`, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, t + 0.5);
+      add('fromTo', `[data-fact="${i}"] [data-tag]`, hidden, pop, t + 0.3);
+      add('fromTo', `[data-reveal="${i + 1}"]`, hidden, pop, t + 0.42);
       t += 0.75;
       stops.push(t);
     });
     // last: the answer replaces the question
     t += 0.5;
     if (view.variant === 'none') {
-      tl.fromTo(q('[data-stub]'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.4 }, t);
-      tl.fromTo(q('[data-gap]'), hidden, pop, t + 0.35);
+      add('fromTo', '[data-stub]', { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.4 }, t);
+      add('fromTo', '[data-gap]', hidden, pop, t + 0.35);
       t += 0.9;
     } else if (layout.answer) {
-      tl.to(q('[data-q]'), { autoAlpha: 0, duration: 0.35 }, t);
-      tl.fromTo(q('[data-a-line]'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.75 }, t + 0.1);
-      tl.fromTo(q('[data-a-head]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, t + 0.8);
-      tl.fromTo(q('[data-a-tag]'), hidden, { ...pop, ease: 'back.out(1.6)' }, t + 0.55);
-      tl.fromTo(q('[data-lit]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3 }, t + 0.8);
-      tl.fromTo(q('[data-halo]'), { autoAlpha: 0.7, scale: 1, transformOrigin: '50% 50%' }, { autoAlpha: 0, scale: 2.3, duration: 0.8, ease: 'power2.out' }, t + 0.85);
+      add('to', '[data-q]', { autoAlpha: 0, duration: 0.35 }, t);
+      add('fromTo', '[data-a-line]', { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.75 }, t + 0.1);
+      add('fromTo', '[data-a-head]', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, t + 0.8);
+      add('fromTo', '[data-a-tag]', hidden, { ...pop, duration: 0.45, ease: 'expo.out' }, t + 0.55);
+      add('fromTo', '[data-lit]', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3 }, t + 0.8);
+      add('fromTo', '[data-halo]', { autoAlpha: 0.7, scale: 1, transformOrigin: '50% 50%' }, { autoAlpha: 0, scale: 2.3, duration: 0.8, ease: 'power2.out' }, t + 0.85);
       t += 1.2;
     } else t += 0.4;
     stops.push(t);
@@ -207,6 +212,11 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
     engine.current?.attach(name, el);
     return () => engine.current?.attach(name, null);
   }, []);
+  const attachLabel = useCallback((el) => {
+    const key = el.dataset.key;
+    engine.current?.attachLabel(key, el);
+    return () => engine.current?.attachLabel(key, null);
+  }, []);
   const attachLink = useCallback((el) => {
     const key = el.dataset.key;
     engine.current?.attachLink(key, el);
@@ -228,6 +238,8 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
   }, [plan.vw, width]);
 
   const [save, setSave] = useState('idle');   // idle | busy | done | failed
+  const dlRef = useRef(null);
+  useShapeMorph(dlRef, save);
   const download = async () => {
     if (!svg.current || save === 'busy') return;
     setSave('busy');
@@ -281,10 +293,25 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
               </g>
             )}
 
+            <defs>
+              <marker id={arrowId} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M1 1.5 8.5 5 1 8.5Z" className={s.relHead} />
+              </marker>
+            </defs>
             <g className={s.mentions}>
               {links.map(([p, q]) => {
-                const key = `${p}\u0000${q}`;
-                return <line key={key} ref={attachLink} data-key={key} className={s.mention} />;
+                const key = `${p}\u0000${q}`, rel = relations[key]?.rel;
+                if (!rel) return <line key={key} ref={attachLink} data-key={key} className={s.mention} />;
+                const w = Math.ceil(textWidth(rel, 'tag')) + 18;
+                return (
+                  <g key={`${key}\u0001${rel}\u0001${relations[key].rev}`}>
+                    <line ref={attachLink} data-key={key} className={s.relLine} markerEnd={`url(#${arrowId})`} />
+                    <g ref={attachLabel} data-key={key} data-rev={relations[key].rev ? '1' : undefined} className={s.relTag}>
+                      <rect x={-w / 2} y={-10} width={w} height={20} rx={10} />
+                      <text y={4} textAnchor="middle">{rel}</text>
+                    </g>
+                  </g>
+                );
               })}
             </g>
 
@@ -384,17 +411,19 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
       {/* the step caption and controls: right under the picture, before the key */}
       {children}
       <div className={s.under}>
-        <Legend live={!view} links={links.length > 0} solved={solved} example={solved ? [personLabel(view.nodes[0]), view.edges[0], personLabel(view.nodes[1])] : null} />
+        <Legend live={!view} links={links.length > 0} facts={links.some(([p, q]) => relations[`${p}\u0000${q}`])} mentions={links.some(([p, q]) => !relations[`${p}\u0000${q}`])} solved={solved} example={solved ? [personLabel(view.nodes[0]), view.edges[0], personLabel(view.nodes[1])] : null} />
         {(view || names.length > 0) && (
           <div className={s.tools}>
             {share && view && !stale && <ShareButton share={share} />}
-          <button type="button" className={s.download} onClick={download} data-state={save} aria-label="Download the map as an image" title="Download the map as a PNG image">
+          <button ref={dlRef} type="button" className={`${s.download} morph`} onClick={download} data-state={save} aria-label={save === 'busy' ? 'Saving the image' : 'Download the map as an image'} title="Download the map as a PNG image">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-              {save === 'done'
+              {save === 'busy'
+                ? <path className={s.spin} d="M8 2.5a5.5 5.5 0 1 1-5.5 5.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                : save === 'done'
                 ? <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 : <><path className={s.dlArrow} d="M8 2.5v7.5M4.8 7.2 8 10.4l3.2-3.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 13h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>}
             </svg>
-            <span>{save === 'done' ? 'Saved' : save === 'failed' ? 'Try again' : 'Download'}</span>
+            {(save === 'idle' || save === 'failed') && <span>{save === 'failed' ? 'Try again' : 'Download'}</span>}
           </button>
           </div>
         )}
@@ -404,9 +433,15 @@ export default function StoryGraph({ people, links, a, b, view, stale, share, on
   );
 }
 
-function Legend({ live, links, solved, example }) {
+function Legend({ live, links, facts, mentions, solved, example }) {
   if (live) {
-    return links ? <p className={s.legend}><span className={s.keyMention} aria-hidden="true" /> mentioned together in the story, not a family link</p> : null;
+    if (!links) return null;
+    return (
+      <div className={s.legendBlock}>
+        {facts && <p className={s.legend}><span className={s.keyFact} aria-hidden="true" /> a family fact the model read: the arrow points to the relative</p>}
+        {mentions && <p className={s.legend}><span className={s.keyMention} aria-hidden="true" /> mentioned together in the story, not a family link</p>}
+      </div>
+    );
   }
   if (!solved) return null;
   return (

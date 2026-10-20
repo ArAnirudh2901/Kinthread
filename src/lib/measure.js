@@ -12,18 +12,17 @@ function family(kind) {
   return fonts[kind];
 }
 
-/** kind: 'name' (500 14px UI font) | 'tag' (500 11.5px mono) | 'role' (500 10px mono, uppercase, 0.1em tracking) */
+/** kind: 'name' (500 14px UI font) | 'tag' (500 11.5px mono) | 'role' (500 12px UI font) */
 export function textWidth(text, kind) {
   const key = `${kind}\u0000${text}`;
   const hit = cache.get(key);
   if (hit != null) return hit;
   let w;
   if (typeof document === 'undefined' || !(ctx ??= document.createElement('canvas').getContext('2d'))) {
-    w = text.length * (kind === 'name' ? 7.6 : kind === 'tag' ? 7 : 7.2);
+    w = text.length * (kind === 'name' ? 7.6 : kind === 'tag' ? 7 : 6.6);
   } else {
-    ctx.font = kind === 'name' ? `500 14px ${family('ui')}` : kind === 'tag' ? `500 11.5px ${family('mono')}` : `500 10px ${family('mono')}`;
-    const t = kind === 'role' ? text.toUpperCase() : text;
-    w = ctx.measureText(t).width + (kind === 'role' ? t.length * 1 : kind === 'tag' ? t.length * 0.23 : 0);
+    ctx.font = kind === 'tag' ? `500 11.5px ${family('mono')}` : `500 ${kind === 'name' ? 14 : 12}px ${family('ui')}`;
+    w = ctx.measureText(text).width + (kind === 'tag' ? text.length * 0.23 : 0);
   }
   cache.set(key, w);
   return w;

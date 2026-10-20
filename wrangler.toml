@@ -1,4 +1,5 @@
-# Cloudflare Pages project settings, used by `npm run preview`. Deploying is manual: see README.
+# Cloudflare Pages project (classic Pages, https://kinthread.pages.dev). `bun run preview` serves out/ locally;
+# `bun run deploy` builds and deploys from the owner's own Cloudflare login (check `wrangler whoami` first).
 name = "kinthread"
 pages_build_output_dir = "out"
 compatibility_date = "2026-10-01"

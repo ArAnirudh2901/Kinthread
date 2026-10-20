@@ -25,7 +25,7 @@ export default function HowItWorks() {
   const { qa, tagger } = RUNTIME.facts;
   return (
     <main id="main">
-      <PageIntro eyebrow="How it works" title="From a story to a thread.">
+      <PageIntro title="From a story to a thread.">
         <p>
           Kinthread finds the people in your story, then traces the family facts that connect the two you choose.
           Two small models do the work, inside this browser tab.
@@ -44,9 +44,9 @@ export default function HowItWorks() {
             Use the buttons under it to pause, step back, or jump to the answer.
           </p>
           <ul>
-            <li><strong>Indigo</strong> marks the question: the two people you chose, and a dashed arrow with a &ldquo;?&rdquo; between them.</li>
-            <li><strong>Gold</strong> arrows are facts from the story, numbered in the order the reasoning uses them. Each step quotes the sentence it came from.</li>
-            <li><strong>Red</strong> is the answer: the red thread between the two people that replaces the question.</li>
+            <li><strong>White chalk</strong> marks the question: the two people you chose, and a dashed arrow with a &ldquo;?&rdquo; between them.</li>
+            <li><strong>Blue chalk</strong> arrows are facts from the story, numbered in the order the reasoning uses them. Each step quotes the sentence it came from.</li>
+            <li><strong>Yellow chalk</strong> is the answer: the thread between the two people that replaces the question (on the light theme, a yellow highlighter under it).</li>
             <li>Shapes follow the pedigree charts used in biology: <strong>squares</strong> are male, <strong>circles</strong> female, and a <strong>diamond</strong> means the story never says.</li>
             <li>Rows are generations: parents above, children below, people of the same generation side by side.</li>
             <li>Arrows point from a person to their relative: <em>Ashley &rarr; daughter &rarr; Lillian</em> means Lillian is Ashley&rsquo;s daughter.</li>

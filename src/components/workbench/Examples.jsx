@@ -9,7 +9,7 @@ export default function Examples({ onPick }) {
       <ul className={s.list} aria-labelledby="examples-label">
         {EXAMPLES.map((ex) => (
           <li key={ex.id}>
-            <button type="button" className={s.example} onClick={() => onPick(ex)} aria-describedby={`ex-${ex.id}`} title={ex.hint}>
+            <button type="button" className={s.example} onClick={(e) => onPick(ex, e.currentTarget)} aria-describedby={`ex-${ex.id}`} title={ex.hint}>
               {ex.label}
               <svg className={s.arrow} viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>

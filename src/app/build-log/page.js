@@ -34,7 +34,7 @@ export default function BuildLog() {
   const { qa, tagger } = RUNTIME.facts;
   return (
     <main id="main">
-      <PageIntro eyebrow="Build log &middot; October 2026" title="Two models, trained from scratch, shipped to a browser tab.">
+      <PageIntro meta="October 2026" title="Two models, trained from scratch, shipped to a browser tab.">
         <p>
           No hosted AI API sits behind Kinthread. Both models were written, trained and evaluated as part of a
           from-scratch study of transformers, then compiled into a page that runs them on your own device.
@@ -43,7 +43,7 @@ export default function BuildLog() {
 
       <div className={`container ${s.layout}`}>
         <nav className={s.toc} aria-label="On this page">
-          <p className="eyebrow">On this page</p>
+          <p className="label">On this page</p>
           <ol>{SECTIONS.map(([id, t]) => <li key={id}><a href={`#${id}`}>{t}</a></li>)}</ol>
         </nav>
 

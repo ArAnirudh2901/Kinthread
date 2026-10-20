@@ -26,7 +26,7 @@ export default function Limits() {
   const relations = RUNTIME.facts.qa.relations;
   return (
     <main id="main">
-      <PageIntro eyebrow="Limits & tips" title="Small, specialised, honest about it.">
+      <PageIntro title="Small, specialised, honest about it.">
         <p>
           Kinthread does one thing: it works out how two people in a short family story are related. Knowing where its
           edges are helps you get good answers, and helps you read the ones it is unsure about.
@@ -35,7 +35,7 @@ export default function Limits() {
 
       <div className={`container ${s.layout}`}>
         <nav className={s.toc} aria-label="On this page">
-          <p className="eyebrow">On this page</p>
+          <p className="label">On this page</p>
           <ol>{SECTIONS.map(([id, t]) => <li key={id}><a href={`#${id}`}>{t}</a></li>)}</ol>
         </nav>
         <article className="prose">

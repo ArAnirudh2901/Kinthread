@@ -15,7 +15,7 @@ export default function Home() {
       <Hero />
       <Workbench />
       <section className={`container ${s.deeper}`} aria-labelledby="deeper-title">
-        <h2 id="deeper-title" className="eyebrow">Go deeper</h2>
+        <h2 id="deeper-title" className={s.deeperTitle}>Go deeper</h2>
         <ul>
           {DEEPER.map((d) => (
             <li key={d.href}>

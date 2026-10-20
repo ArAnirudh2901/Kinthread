@@ -7,9 +7,9 @@
 }
 .primary { padding: 0 8px 0 22px; border: 0; background: var(--answer-fill); color: var(--on-answer); }
 /* button-in-button: the arrow sits in its own circle and dips on hover */
-.icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgb(23 37 42 / 0.12); transition: transform 0.35s var(--spring), background-color var(--t-fast); }
-@media (hover: hover) and (pointer: fine) { .primary:hover { box-shadow: 0 0 0 6px rgb(238 90 64 / 0.2); } }
-@media (hover: hover) and (pointer: fine) { .primary:hover .icon { transform: translateY(3px); background: rgb(23 37 42 / 0.2); } }
+.icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgb(var(--on-answer-rgb) / 0.14); transition: transform 0.35s var(--ease), background-color var(--t-fast); }
+@media (hover: hover) and (pointer: fine) { .primary:hover { box-shadow: 0 0 0 6px rgb(var(--answer-rgb) / 0.2); } }
+@media (hover: hover) and (pointer: fine) { .primary:hover .icon { transform: translateY(3px); background: rgb(var(--on-answer-rgb) / 0.22); } }
 .secondary { padding: 0 22px; border: 1px solid var(--line-strong); color: var(--ink); }
 @media (hover: hover) and (pointer: fine) { .secondary:hover { border-color: var(--ink); background: var(--surface); } }
 .primary:active, .secondary:active { transform: scale(0.96); }

@@ -1,4 +1,4 @@
-.footer { border-top: 1px solid var(--line); margin-top: 96px; padding-block: 28px 36px; font-size: 0.9rem; }
+.footer { border-top: 1px solid var(--line); margin-top: 96px; padding-block: 28px 36px; font-size: var(--fs-small); }
 .inner { display: grid; gap: 18px; align-items: start; }
 .brand { display: flex; gap: 12px; align-items: flex-start; max-width: 52ch; color: var(--text-2); }
 .brand p { margin: 2px 0 0; }

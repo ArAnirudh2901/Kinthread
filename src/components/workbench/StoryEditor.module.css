@@ -2,7 +2,7 @@
 .head { display: flex; align-items: center; justify-content: space-between; min-height: 32px; }
 .clear {
   min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent;
-  font-size: 0.86rem; color: var(--text-2); transition: color var(--t-fast), background-color var(--t-fast);
+  font-size: var(--fs-small); color: var(--text-2); transition: color var(--t-fast), background-color var(--t-fast);
 }
 @media (hover: hover) and (pointer: fine) { .clear:hover:not(:disabled) { color: var(--ink); background: var(--surface-2); } }
 .clear:disabled { opacity: 0.45; }
@@ -15,29 +15,36 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);
-  font-size: 1.04rem;
+  font-size: var(--fs-body-lg);
   line-height: 1.68;
   box-shadow: var(--shadow);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .input::placeholder { color: var(--text-2); opacity: 1; }
-.input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgb(143 162 230 / 0.5), var(--shadow); }
+.input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgb(var(--question-rgb) / 0.5), var(--shadow); }
 .input[data-over] { border-color: var(--question); border-width: 2px; padding: 15px 17px; }
 
-.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; font-size: 0.86rem; color: var(--text-2); min-height: 22px; }
+.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; font-size: var(--fs-small); color: var(--text-2); min-height: 22px; }
 .count { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
 .count[data-over] { color: var(--question-ink); }
 .overText { font-weight: 600; }
 .warn { flex: none; }
 
-.tip { margin: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--question); font-size: 0.86rem; color: var(--ink); background: rgb(143 162 230 / 0.08); }
+.tip { margin: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--question); font-size: var(--fs-small); color: var(--ink); background: rgb(var(--question-rgb) / 0.08); }
 
 .clear { transition: opacity 120ms var(--ease); }
 .clear:active:not(:disabled) { opacity: 0.55; }
 
 /* undo after Clear: inline, quiet, gone after a few seconds */
-.undo { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 0.9rem; color: var(--text-2); animation: undo-in 200ms var(--ease); }
 .undoBtn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: transparent; color: var(--ink); font-weight: 600; transition: transform 120ms var(--ease), border-color var(--t-fast); }
 @media (hover: hover) and (pointer: fine) { .undoBtn:hover { border-color: var(--ink); } }
 .undoBtn:active { transform: scale(0.95); }
 @keyframes undo-in { from { opacity: 0; transform: translateY(-4px); } }
+
+/* Clear and its undo toast are one shape (StoryEditor: useShapeMorph); the bar drains with the 8 s undo window */
+.clearBox { position: relative; display: inline-flex; align-items: center; height: 32px; border-radius: 999px; transition: background-color var(--t) var(--ease); }
+.clearBox[data-state="undo"] { height: 40px; margin-block: -4px; gap: 10px; padding: 0 4px 0 14px; background: var(--surface-2); font-size: var(--fs-small); }
+.clearBox[data-state="undo"] .undoBtn { min-height: 32px; }
+.undoText { color: var(--text-2); }
+.drain { position: absolute; left: 14px; right: 18px; bottom: 4px; height: 2px; border-radius: 999px; background: var(--answer); transform-origin: left; animation: drain 8s linear forwards; }
+@keyframes drain { to { transform: scaleX(0); } }

@@ -4,7 +4,7 @@
 export default function Error({ reset }) {
   return (
     <main id="main" className="container" style={{ paddingBlock: '96px', display: 'grid', gap: 16, justifyItems: 'start' }}>
-      <h1 className="display" style={{ margin: 0, fontSize: 'clamp(2rem, 1.5rem + 2vw, 3rem)' }}>Something went wrong.</h1>
+      <h1 className="display" style={{ margin: 0, fontSize: 'var(--fs-h1)' }}>Something went wrong.</h1>
       <p style={{ margin: 0, color: 'var(--text-2)', maxWidth: '50ch' }}>
         This page hit an unexpected error. Your story is kept in this tab, so trying again usually brings it back.
       </p>

@@ -1,5 +1,7 @@
 'use client';
 import { forwardRef, useId, useRef, useState } from 'react';
+import { useShapeMorph } from '@/lib/useShapeMorph';
+import { fly } from '@/lib/fly';
 import { gsap, prefersReducedMotion, useGSAP } from '@/lib/gsap';
 import { findInStory } from '@/lib/story';
 import s from './PeoplePicker.module.css';
@@ -26,7 +28,10 @@ const PeoplePicker = forwardRef(function PeoplePicker({ state, ready, measured, 
   // the arrows flip half a turn per swap, always landing upright even when clicked mid-turn
   const { contextSafe } = useGSAP({ scope: root });
   const swap = contextSafe((e) => {
+    const blanks = [...document.querySelectorAll('[data-slot]')].map((el) => [el, el.textContent.trim()]);
     dispatch({ type: 'swap' });
+    // the two names cross over into each other's blank
+    for (const [el, name] of blanks) fly(el, () => [...document.querySelectorAll('[data-slot]')].find((x) => x !== el && x.textContent.trim() === name));
     if (prefersReducedMotion()) return;
     const icon = e.currentTarget.querySelector('svg');
     const to = Math.round(gsap.getProperty(icon, 'rotation') / 180) * 180 + 180;
@@ -82,7 +87,7 @@ const PeoplePicker = forwardRef(function PeoplePicker({ state, ready, measured, 
                   aria-describedby={helpId}
                   disabled={!measured}
                   aria-label={`${name}. Put in the ${SLOTS[slot].label}.`}
-                  onClick={() => dispatch({ type: 'choose', name })}
+                  onClick={(e) => { const from = e.currentTarget; dispatch({ type: 'choose', name }); fly(from, () => [...document.querySelectorAll('[data-slot]')].find((x) => x.textContent.trim() === name)); }}
                 >
                   {name}
                 </button>
@@ -104,6 +109,8 @@ const PeoplePicker = forwardRef(function PeoplePicker({ state, ready, measured, 
 
 function AddName({ story, people, onAdd }) {
   const [open, setOpen] = useState(false);
+  const box = useRef(null);
+  useShapeMorph(box, open);   // the link grows into the field and back
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
   const id = useId();
@@ -122,14 +129,9 @@ function AddName({ story, people, onAdd }) {
     setOpen(false);
   };
 
-  if (!open) {
-    return (
-      <button type="button" className={s.missing} onClick={() => setOpen(true)}>
-        Missing someone? Add a name
-      </button>
-    );
-  }
   return (
+    <div ref={box} className={`${s.addBox} morph`} data-open={open || undefined}>
+      {open ? (
     <form className={s.addForm} onSubmit={submit} noValidate>
       <label htmlFor={id} className={s.addLabel}>Name, exactly as written in the story</label>
       <div className={s.addRow}>
@@ -152,6 +154,12 @@ function AddName({ story, people, onAdd }) {
       </div>
       {error && <p id={`${id}-err`} className={s.addError} role="alert">{error}</p>}
     </form>
+      ) : (
+        <button type="button" className={s.missing} onClick={() => setOpen(true)}>
+          Missing someone? Add a name
+        </button>
+      )}
+    </div>
   );
 }
 

@@ -45,8 +45,10 @@ will decide later).
 
 ## Owner's hard rules
 
-- Never deploy from an agent session, with wrangler or any host: the owner deploys from their own account.
-  Local `bun run preview` is fine; give the owner the deploy commands instead (README).
+- Deploy only when the owner asks, and only after `bunx wrangler whoami` shows the owner's own Cloudflare account
+  (wrangler on this Mac was once logged in to someone else's; if it is not the owner's, stop and ask them to run
+  `bunx wrangler login`). Live: https://kinthread.pages.dev (classic Pages project `kinthread`, branch `main`).
+  Deploy with `bun run deploy`; never pass `--force` to a deploy of an existing project, and never delete it.
 - Commit only when asked; never push unless asked. Repo: https://github.com/ArAnirudh2901/Kinthread (public,
   Apache-2.0, branch `main`), checked out at `~/Web_Dev/kinthread`. It is hidden from the parent `~/Web_Dev` repo (the owner's other
   projects) through `~/Web_Dev/.git/info/exclude`: never commit Kinthread into `~/Web_Dev`.
@@ -75,6 +77,7 @@ will decide later).
 | `bun run check` | lint + all node tests + build: run before reporting work as done |
 | `bun run test` | node tests only (`tests/*.test.mjs`, includes the real model) |
 | `bun run preview` | `wrangler pages dev out` on :8788 (local only) |
+| `bun run deploy` | build, then `wrangler pages deploy out --project-name kinthread --branch main` (owner's account only) |
 | `node tools/harness/server.mjs` | serves `out/` on :8791 (COOP/COEP, no X-Frame-Options, HTTP Range) for the browser harness; `SLOW=<ms per MB>` or `POST /__profile` (network simulator) throttle model downloads |
 
 ## Map of the code
@@ -88,23 +91,26 @@ will decide later).
 | Model client | `src/lib/model/client.js` (worker, `modelOnDevice`), `runtime/worker.js` (cache, checksums, inference) |
 | Loader | `map/ModelGate.jsx` (full-screen window: first visit or any network download), `map/Weave.jsx` (WeaveStage, DownloadStatus, AskCopy: one design for window and panel), `lib/progress-follow.js` + `lib/useFollowedProgress.js` (the progress algorithm), `lib/constellation-graph.js` `buildNeuralCone` |
 | Share / undo / checks | `lib/share.js` (#hash links), `lib/consistency.js` (contradictions), undo in `Workbench.jsx`, `components/ErrorBoundary.jsx`, `app/error.js` |
-| 3D | `src/lib/gl/constellation.js` (raw WebGL, lazy; hero = family constellation, loader = neural cone) |
+| 3D | `src/lib/gl/constellation.js` (raw WebGL, lazy; hero and loader both draw the neural cone: hero fully woven, loader weaves with the download) |
 
 ## Product decisions (don't undo without asking the owner)
 
-- Dark theme by default, light optional (View Transitions circle reveal). "Red thread" palette tokens (natural dyes: indigo ground/question, weld gold facts, madder red answer and accent, undyed wool text; tokens are role-named: `--answer`, `--answer-fill`, `--on-answer`, `--fact`, `--question`) in `globals.css`.
+- Dark theme by default, light optional (View Transitions circle reveal). "Chalkboard" palette (green-black board, chalk-white text, yellow-chalk answer and accent, blue-chalk facts, white-chalk question; light theme = exam paper with an ochre answer over a yellow highlighter; no orange/cream/violet/indigo; see DESIGN.md; tokens are role-named: `--answer`, `--answer-fill`, `--on-answer`, `--fact`, `--question`) in `globals.css`.
 - Three numbered steps: Write a family story / Pick two people / See how they're related.
 - The picker is the question: "How is [ ] related to [ ]?". Blanks fill in reading order (B, the person described,
   first; then A, the reference). Choosing both people, or swapping, solves at once. The button says "Solve".
 - No A/B role letters anywhere in the UI (they clashed with exam questions that name people A, B, C).
-- Colours: indigo = the question (dashed arrow with "?"), gold = facts (numbered, quoted from the story), red = the
-  answer. Pedigree shapes: square male, circle female, diamond not stated. Rows are generations.
+- Colours: white chalk = the question (dashed arrow with "?"), blue chalk = facts (numbered, quoted from the story),
+  yellow chalk = the answer. Pedigree shapes: square male, circle female, diamond not stated. Rows are generations.
 - Above the map: the question, which becomes the answer. Under the map: step caption and controls, then legend and
   Download. The full step list is folded. The last caption shows the working ("Victor's father's wife's daughter is
   Victor's sister").
 - Jargon (engine, agreement, timings, tokens) only inside "Model details".
-- First visit: a window (`ModelGate`, native `<dialog>`) asks before the one-time model download, shows progress and
-  closes itself when ready; returning visitors (`modelOnDevice()`) start silently.
+- The model window (`ModelGate`, native `<dialog>`) opens only when something asks for the model (Solve, an example,
+  Download; `lib/model/gate.js` `requestModel(el)`): it grows out of that control as one shape (clip-path inset on a
+  spring, the control's colour and label fade/blur out, the weave blurs in) and shrinks back into it when ready; the
+  solve then runs in view. Solve stays enabled before the model exists, with a note on the one-time size. Returning
+  visitors (`modelOnDevice()`) load silently with no window.
 - Exam input (`exam.js`): the pasted question is detected, filled in and removed from what the model reads; answer
   options are dropped; single letters count as names; "X is the R of Y" is reworded to "Y's R X was there" for the
   model only (fixes multi-hop chains). The user's text is never changed. Spoken-clue puzzles get a "not supported" tip.
@@ -116,6 +122,18 @@ will decide later).
   cross-fades into "Ready", then the window closes. Downloads resume after a dropped connection (Range; waits
   1/2/4/8/15 s, "Connection lost, reconnecting…"); only then does the error screen show.
 - Share link (story in the #hash only, never sent to a server), undo for Clear (8 s), contradiction warning in the editor.
+- Motion system: springs as CSS `linear()` (`lib/motion.js` `springEasing`, damping 0.82, ~1% overshoot, no bounce);
+  `lib/useShapeMorph.js` morphs a control's size between states with its new content blurring in (Download: pill ->
+  loader -> check -> pill; Share; Clear -> undo toast with a draining bar; Solve -> loader circle when slow; header
+  status pill; add-name field; guidance under Solve); `lib/fly.js` sends a tapped name chip into its blank and crosses
+  the two names on Swap; `lib/liquid.js` slides one nav underline between links (each edge on its own spring, the
+  leading edge stretches); play/pause icons morph (CSS `d`); headline, caption and step number swap with a short blur;
+  `<details>` open with `interpolate-size` where supported.
+- Smooth scrolling: Lenis (`lib/smooth-scroll.js`) for wheel/trackpad only, driven only while moving; touch and
+  reduced motion keep native scroll; code scrolls through `scrollToTarget`; the model window holds the page still.
+- Live map (before solving): each mentioned-together pair is asked both ways; a confident relation becomes a labelled
+  blue arrow (the direction the story states in words, so no guessed gender); the rest stay dashed.
+- Neural cone (hero and loader): soft yellow wash with the answer path brightest (owner's pick of four).
 - GSAP 3.15 for motion (Motion was removed). WebAssembly, not WebGPU: WebGPU measured 3–9x slower per beam step.
 
 ## Cross-browser constraints
@@ -148,7 +166,7 @@ will decide later).
 - Touch fixes and the loader were seen on the owner's phone (Android Chrome, plain HTTP preview); Safari/iOS on a real
   device not checked. Slow 3G/2G live runs cover the start and the final stretch, not a full 20-minute download.
 - The build-log page has two marked placeholders for the owner's own words.
-- Deploy waits for the owner's own Cloudflare account; set `SITE_URL` (default `https://kinthread.pages.dev`).
+- Cloudflare Pages ignores HTTP Range: a dropped connection re-downloads the in-flight 2 MiB parts (worker handles it).
 
 ## Handoff log
 
@@ -206,3 +224,32 @@ will decide later).
   downloads (Range, waits 1/2/4/8/15 s, "Connection lost, reconnecting…"); harness server supports Range. Live suite
   (13 profiles incl. spikes, 200 Mbps, connection drop): 0 mismatches/ahead/backwards/skipped, one canvas each.
 - 2026-10-20: handbook refreshed (testing workflow, code map, loader decisions, test counts); all three repos pushed.
+- 2026-10-20: deployed to https://kinthread.pages.dev (owner's Cloudflare account; classic Pages via `--force` on
+  project create, because wrangler turns agent-run Pages commands into a Workers project with a longer URL). Model
+  parts 16 MiB -> 2 MiB (Pages ignores Range); model folder version now hashes the served parts (a part-size change
+  used to reuse the old folder); `check` syncs before testing; `bun run deploy`; robots.txt, sitemap.xml, 1200x630
+  share image (JPEG, 95 KB), Apple touch icon. Live: all served files byte-identical to out/.
+- 2026-10-20: live-test fixes: loader label stayed "Checking" while the weave finishes (it fell back to
+  "Downloading" once the model was ready; harness now checks the label never steps back); GSAP no longer gets empty
+  targets (optional map parts, empty live map), so the console is clean. Live: 14 network profiles all zero, solve
+  harness clean, real first visit 61.4 MB in ~14 s, returning visit ready in 0.56 s, all served files byte-identical.
+- 2026-10-20: palette replaced: "Red thread" (red-orange + cream read as Anthropic) -> "Chalkboard" (owner picked it
+  from a side-by-side of three; rani-pink/peacock was tried first and rejected). Tokens only change in globals.css;
+  literal copies in lib/gl/constellation.js, icon.svg, apple-icon.png, opengraph-image.jpg, layout.js theme-color,
+  docs/map-*.png. `--answer-rgb` / `--answer-tint` replace hard-coded tints. Harness: server no longer crashes when
+  the profile is reset mid-download; `__export.html?example=&width=&themes=&keep=1` returns PNGs (README images).
+- 2026-10-20: impeccable polish pass (detector 101 -> 0 findings): `--fs-*` type ramp and `--radius-xs` (DESIGN.md
+  documents both; map SVG text keeps px sizes because lib/measure.js lays it out); stale old-indigo/gold rgb() tints
+  -> `--question-rgb`/`--fact-rgb`; no eyebrows (hero subtitle joins the lede, PageIntro `meta` replaces `eyebrow`),
+  no tiny uppercase mono labels (sentence-case 13px UI font; mono only for data: tokens, tags, numbers, code), no
+  coloured side bars, status pill after the headline, no bounce (`--spring` removed; map pops power3/expo from 0.85),
+  selection/caret/accent/scrollbar themed. Solve harness and loader checks clean.
+- 2026-10-20: hero now shows the neural cone too, fully woven in the answer colour (yellow chalk; ochre on light),
+  with pulses down the answer path; the old family-constellation graph and its test are gone. ESLint `no-undef` on
+  (a removed variable had blanked the WebGL scene at runtime without failing lint).
+- 2026-10-20: Lenis smooth scrolling; model window opens from Solve/example/Download and morphs from and back into
+  that control (gate.js, ModelGate); shape-morph motion system (motion.js, useShapeMorph, fly) on Download, Share,
+  Clear/undo, Solve, header status, picker, play/pause, caption blur; live-map links labelled with model relations
+  (asked both ways); cone soft yellow; How it works copy names the Chalkboard colours.
+- 2026-10-20: morphs added on the most-used path (nav underline, headline/caption/counter blur swaps, Swap cross-over,
+  guidance line, disclosures, add-name). Loader suite 14/14 clean on this build; solve harness clean.

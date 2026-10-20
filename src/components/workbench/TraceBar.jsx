@@ -1,13 +1,24 @@
 'use client';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useShapeMorph } from '@/lib/useShapeMorph';
 import { gsap, prefersReducedMotion, useGSAP } from '@/lib/gsap';
 import s from './TraceBar.module.css';
 
-export default function TraceBar({ reason, running, canTrace, onTrace }) {
+export default function TraceBar({ reason, note, running, canTrace, onTrace }) {
   const root = useRef(null);
   const btn = useRef(null);
   const runTl = useRef(null);
   const hovered = useRef(false);
+  // a quick solve keeps the pill; a slow one (first run, a long story) turns it into a loader circle
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!running) return;
+    const t = setTimeout(() => setSlow(true), 150);
+    return () => { clearTimeout(t); setSlow(false); };
+  }, [running]);
+  useShapeMorph(btn, slow ? 'slow' : 'idle');
+  const guide = useRef(null);
+  useShapeMorph(guide, reason || note || '');   // the guidance line resizes and its words blur in
 
   // Solve button: leans toward the pointer (quickTo reuses one tween per axis), and a light runs along
   // the thread inside it on hover and while solving.
@@ -58,15 +69,17 @@ export default function TraceBar({ reason, running, canTrace, onTrace }) {
         <button
           ref={btn}
           type="button"
-          className={s.trace}
+          data-solve=""
+          className={`${s.trace} morph`}
           data-running={running || undefined}
+          data-slow={slow || undefined}
           onClick={onTrace}
           onPointerEnter={() => hover(true)}
           onPointerLeave={(e) => { hover(false); press(e.currentTarget, false); }}
           onPointerDown={(e) => press(e.currentTarget, true)}
           onPointerUp={(e) => press(e.currentTarget, false)}
           disabled={!canTrace}
-          aria-describedby={reason ? 'trace-reason' : undefined}
+          aria-describedby={reason || note ? 'trace-reason' : undefined}
         >
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" className={s.glyph}>
             <path d="M3 16c3-8 6-8 9 0s6 8 9 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={s.wave} />
@@ -74,10 +87,10 @@ export default function TraceBar({ reason, running, canTrace, onTrace }) {
             <circle cx="3" cy="16" r="2.2" className={s.dotA} />
             <circle cx="21" cy="16" r="2.2" className={s.dotB} />
           </svg>
-          <span>{running ? 'Solving\u2026' : 'Solve'}</span>
+          {!slow && <span>{running ? 'Solving\u2026' : 'Solve'}</span>}
         </button>
       </div>
-      {reason && <p id="trace-reason" className={s.reason}>{reason}</p>}
+      <div ref={guide} className={s.guide}>{(reason || note) && <p id="trace-reason" className={s.reason}>{reason || note}</p>}</div>
     </div>
   );
 }

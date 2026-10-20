@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useShapeMorph } from '@/lib/useShapeMorph';
 import { shareHash } from '@/lib/share';
 import s from './StoryGraph.module.css';
 
@@ -7,6 +8,8 @@ import s from './StoryGraph.module.css';
 export default function ShareButton({ share }) {
   const [state, setState] = useState('idle');   // idle | copied | manual
   const [link, setLink] = useState('');
+  const ref = useRef(null);
+  useShapeMorph(ref, state);
   const flash = (st) => { setState(st); if (st !== 'manual') setTimeout(() => setState('idle'), 2000); };
 
   const onClick = async () => {
@@ -32,7 +35,7 @@ export default function ShareButton({ share }) {
 
   return (
     <>
-      <button type="button" className={s.download} data-state={state === 'copied' ? 'done' : undefined} onClick={onClick} aria-label="Share a link to this question" title="Copy a link that opens this question">
+      <button ref={ref} type="button" className={`${s.download} morph`} data-state={state === 'copied' ? 'copied' : undefined} onClick={onClick} aria-label="Share a link to this question" title="Copy a link that opens this question">
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
           {state === 'copied'
             ? <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

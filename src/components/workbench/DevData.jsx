@@ -20,9 +20,9 @@ export default function DevData({ dispatch, demo }) {
     if (key && FIXTURES[key]) load(key);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div role="group" aria-label="Dev data" style={{ position: 'fixed', zIndex: 50, left: '50%', bottom: 12, transform: 'translateX(-50%)', display: 'flex', gap: 2, padding: 3, borderRadius: 999, background: '#ddd', font: '12px system-ui', boxShadow: '0 2px 10px rgb(0 0 0 / 0.25)' }}>
+    <div role="group" aria-label="Dev data" style={{ position: 'fixed', zIndex: 50, left: '50%', bottom: 12, transform: 'translateX(-50%)', display: 'flex', gap: 2, padding: 3, borderRadius: 999, background: 'var(--surface-2)', font: '12px system-ui', boxShadow: 'var(--shadow)' }}>
       {KEYS.map((k) => (
-        <button key={k} type="button" onClick={() => load(k)} style={{ border: 0, borderRadius: 999, padding: '5px 10px', background: '#fff', color: '#111', cursor: 'pointer' }}>{k}</button>
+        <button key={k} type="button" onClick={() => load(k)} style={{ border: 0, borderRadius: 999, padding: '5px 10px', background: 'var(--ink)', color: 'var(--bg)', cursor: 'pointer' }}>{k}</button>
       ))}
     </div>
   );

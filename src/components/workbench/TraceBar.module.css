@@ -6,25 +6,27 @@
   border: 0; border-radius: 999px;
   background: var(--answer-fill); color: var(--on-answer);
   font-size: 1rem; font-weight: 650; letter-spacing: -0.005em;
-  box-shadow: 0 0 0 0 rgb(238 90 64 / 0);
+  box-shadow: 0 0 0 0 rgb(var(--answer-rgb) / 0);
   transition: box-shadow 0.3s var(--ease), background-color var(--t-fast) var(--ease);
   will-change: transform;
 }
-@media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) { box-shadow: 0 0 0 6px rgb(238 90 64 / 0.12), 0 14px 36px -12px rgb(238 90 64 / 0.6); } }
+@media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) { box-shadow: 0 0 0 6px rgb(var(--answer-rgb) / 0.12), 0 14px 36px -12px rgb(var(--answer-rgb) / 0.6); } }
 .trace:focus-visible { outline-offset: 4px; }
 .trace:disabled { background: transparent; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line-strong); will-change: auto; }
 .glyph { color: var(--on-answer); overflow: visible; }
 .wave { opacity: 0.55; }
-.runner { stroke: #ffd9cf; visibility: hidden; }
+.runner { stroke: var(--answer-tint); visibility: hidden; }
 .trace:not(:disabled) .runner { visibility: visible; }
-.dotA, .dotB { fill: var(--on-answer); stroke: none; stroke-width: 0; transform-box: fill-box; transform-origin: center; transition: transform 0.3s var(--spring); }
+.dotA, .dotB { fill: var(--on-answer); stroke: none; stroke-width: 0; transform-box: fill-box; transform-origin: center; transition: transform 0.3s var(--ease); }
 @media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) .dotA { transform: scale(1.3); } }
 @media (hover: hover) and (pointer: fine) { .trace:hover:not(:disabled) .dotB { transform: scale(1.3); transition-delay: 0.12s; } }
 .trace:disabled .glyph { color: var(--text-2); }
 .trace:disabled .dotA, .trace:disabled .dotB { fill: var(--line-strong); stroke: none; }
-.reason { margin: 0; font-size: 0.86rem; color: var(--text-2); }
+.reason { margin: 0; font-size: var(--fs-small); color: var(--text-2); }
 @media (max-width: 420px) { .trace { width: 100%; justify-content: center; } }
 
 /* light theme: ink button, lichen thread inside */
 :root[data-theme="light"] .trace:disabled { background: transparent; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
 
+.trace[data-slow] { width: 54px; padding: 0; gap: 0; justify-content: center; }
+.guide { overflow: hidden; }

@@ -1,15 +1,18 @@
 <!doctype html><meta charset="utf-8"><title>export check</title>
 <body style="margin:0"><script type="module">
+// ?example=three&width=1200&themes=dark&keep=1 also returns the PNG itself (README images)
+const qs = new URLSearchParams(location.search);
+const EX = qs.get('example') || 'exam', W = +(qs.get('width') || 375), THEMES = (qs.get('themes') || 'dark,light').split(','), KEEP = qs.has('keep');
 const out = { ua: navigator.userAgent, errors: [] };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const frame = (w) => new Promise((r) => { const f = document.createElement('iframe'); f.src = '/'; f.style.cssText = `width:${w}px;height:900px;border:0`; document.body.appendChild(f); f.onload = () => setTimeout(() => r(f), 3000); });
 try {
-  const f = await frame(375), win = f.contentWindow, d = f.contentDocument;
+  const f = await frame(W), win = f.contentWindow, d = f.contentDocument;
   win.addEventListener('error', (e) => out.errors.push(e.message));
   win.addEventListener('unhandledrejection', (e) => out.errors.push(String(e.reason)));
-  for (const theme of ['dark', 'light']) {
+  for (const theme of THEMES) {
     if (theme === 'light') { d.documentElement.dataset.theme = 'light'; await wait(400); }
-    win.dispatchEvent(new CustomEvent('kinthread:example', { detail: 'exam' }));
+    win.dispatchEvent(new CustomEvent('kinthread:example', { detail: EX }));
     await wait(9000);
     const tb = win.HTMLCanvasElement.prototype.toBlob;
     win.HTMLCanvasElement.prototype.toBlob = function (cb, ...a) { try { win.__png = this.toDataURL('image/png'); } catch (e) { out.errors.push('toDataURL ' + e); } return tb.call(this, cb, ...a); };
@@ -21,7 +24,7 @@ try {
     for (let i = 0; i < 40; i++) { await wait(100); if (states.at(-1) !== btn.dataset.state) states.push(btn.dataset.state); }
     let png = null;
     if (win.__png) { const img = new Image(); img.src = win.__png; await img.decode(); png = `${img.naturalWidth}x${img.naturalHeight}`; }
-    out[theme] = { blanks: [...d.querySelectorAll('button[data-slot]')].map((b) => b.textContent), head: d.querySelector('h3')?.textContent, states: states.join('>'), file: win.__name, png, fits: !d.querySelector('[data-scroll]'), pageW: d.documentElement.scrollWidth };
+    out[theme] = { blanks: [...d.querySelectorAll('button[data-slot]')].map((b) => b.textContent), head: d.querySelector('h3')?.textContent, states: states.join('>'), file: win.__name, png, fits: !d.querySelector('[data-scroll]'), pageW: d.documentElement.scrollWidth, pngData: KEEP ? win.__png : undefined };
   }
 } catch (e) { out.errors.push('fatal ' + e); }
 await fetch('/__result', { method: 'POST', body: JSON.stringify({ export: out }) });

@@ -1,5 +1,6 @@
 .deeper { margin-top: clamp(80px, 12vw, 140px); display: grid; gap: 14px; }
 .deeper h2 { margin: 0; }
+.deeperTitle { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-h3); letter-spacing: -0.02em; }
 .deeper ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .deeper li { border-bottom: 1px solid var(--line); }
 /* row fills from the left on hover; the arrow moves on */
@@ -8,9 +9,9 @@
   display: grid; grid-template-columns: 1fr auto; grid-template-areas: "title arrow" "text text";
   gap: 4px 16px; align-items: baseline; padding: 20px 4px; text-decoration: none;
 }
-.n { grid-area: n; font-size: 0.74rem; color: var(--text-2); }
-.title { grid-area: title; font-size: clamp(1.35rem, 1.1rem + 1vw, 1.9rem); line-height: 1.15; }
-.text { grid-area: text; color: var(--text-2); font-size: 0.94rem; max-width: 60ch; }
+.n { grid-area: n; font-size: var(--fs-label); color: var(--text-2); }
+.title { grid-area: title; font-size: var(--fs-h3); line-height: 1.15; }
+.text { grid-area: text; color: var(--text-2); font-size: var(--fs-ui); max-width: 60ch; }
 .arrow { grid-area: arrow; align-self: center; color: var(--text-2); transition: transform var(--t) var(--ease), color var(--t-fast); }
 .row::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--surface); transform: scaleX(0); transform-origin: left; transition: transform 0.45s var(--ease); }
 @media (hover: hover) and (pointer: fine) { .row:hover::before { transform: scaleX(1); } }

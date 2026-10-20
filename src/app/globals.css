@@ -3,25 +3,30 @@
 :root {
   color-scheme: dark;
   /* Mineral Signal, dark: a late-night cartography lab */
-  --bg: #0f1423;
-  --surface: #161d30;
-  --surface-2: #1e2740;
-  --ink: #f1eadb;
-  --text-2: #b2ac9e;
-  --muted: #b2ac9e;
-  --line: #2a3248;
-  --line-strong: #6b7590;     /* control borders, >= 3:1 */
-  --answer: #ee5a40;          /* the red thread: answers, brand accent (lines, text) */
-  --answer-fill: #c93a26;     /* filled answer surfaces; --on-answer text is 4.8:1 on it */
-  --on-answer: #fff6ea;
-  --fact: #e2b04a;
-  --fact-ink: #e2b04a;
-  --question: #8fa2e6;
-  --question-ink: #9fb0ee;
-  --thread: #ee5a40;
-  --band: rgb(238 90 64 / 0.16);
-  --node-stroke: #0f1423;
-  --grid-dot: rgb(241 234 219 / 0.06);
+  --bg: #11201a;
+  --surface: #172a22;
+  --surface-2: #1e352b;
+  --ink: #edf2ea;
+  --text-2: #a9b9ae;
+  --muted: #a9b9ae;
+  --line: #2a4035;
+  --line-strong: #6b8374;  /* control borders, >= 3:1 */
+  --answer: #f3d34a;  /* yellow chalk: answers, brand accent (lines, text) */
+  --answer-fill: #f3d34a;  /* filled answer surfaces; --on-answer text is 10.9:1 on it */
+  --on-answer: #17241c;
+  --answer-rgb: 243 211 74;
+  --on-answer-rgb: 23 36 28;   /* tints inside filled answer controls */
+  --question-rgb: 228 235 226;
+  --fact-rgb: 143 200 242;   /* for rgb(var(--answer-rgb) / a) rings and highlights */
+  --answer-tint: #fff7d1;
+  --fact: #8fc8f2;  /* blue chalk */
+  --fact-ink: #8fc8f2;
+  --question: #e4ebe2;  /* white chalk, dashed */
+  --question-ink: #e4ebe2;
+  --thread: #f3d34a;
+  --band: rgb(243 211 74 / 0.16);
+  --node-stroke: #11201a;
+  --grid-dot: rgb(237 242 234 / 0.06);
   --shadow: 0 1px 0 rgb(0 0 0 / 0.25), 0 24px 48px -28px rgb(0 0 0 / 0.7);
 
   --font-display: var(--font-fraunces), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -29,12 +34,24 @@
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --radius: 12px;
+  --radius-xs: 4px;            /* chips, code, focus rings */
+  /* type ramp: every size on the site is one of these (the map's measured SVG text excepted) */
+  --fs-label: 0.8125rem;       /* 13px: labels, captions, legends */
+  --fs-small: 0.875rem;        /* 14px: secondary text, tips */
+  --fs-ui: 0.9375rem;          /* 15px: dense UI text */
+  --fs-body-lg: 1.0625rem;     /* 17px: reading text */
+  --fs-lede: clamp(1.05rem, 0.98rem + 0.35vw, 1.22rem);
+  --fs-h4: clamp(1.25rem, 1.05rem + 0.8vw, 1.55rem);
+  --fs-h3: clamp(1.35rem, 1.1rem + 1vw, 1.9rem);
+  --fs-h2: clamp(1.65rem, 1.25rem + 1.6vw, 2.35rem);
+  --fs-h1: clamp(2.4rem, 1.5rem + 3.6vw, 4.2rem);
+  --fs-display: clamp(2.5rem, 1.4rem + 4.6vw, 4.8rem);
+  --fs-figure: clamp(3.6rem, 2.6rem + 5vw, 6rem);
   --radius-sm: 8px;
   --gutter: 16px;
   --max: 1160px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
-  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --t-fast: 160ms;
   --t: 240ms;
 }
@@ -42,25 +59,31 @@
 /* light: mineral paper (opt-in; dark is the default) */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4efe4;
-  --surface: #fbf8f1;
-  --surface-2: #eae3d4;
-  --ink: #1a2033;
-  --text-2: #585b6b;          /* palette #627176 is 4.43:1 on paper; this is 4.92:1 for small text */
-  --muted: #636677;
-  --line: #ddd5c4;
-  --line-strong: #80869a;
-  --answer: #b5311e;
-  --answer-fill: #b5311e;
-  --fact: #865c05;
-  --fact-ink: #865c05;
-  --question: #3b4da6;
-  --question-ink: #3b4da6;
-  --thread: #b5311e;          /* ink line over a lichen highlighter band */
-  --band: rgb(181 49 30 / 0.12);
-  --node-stroke: #1a2033;
-  --grid-dot: rgb(26 32 51 / 0.09);
-  --shadow: 0 1px 0 rgb(26 32 51 / 0.04), 0 12px 32px -18px rgb(26 32 51 / 0.25);
+  --bg: #f3f5ef;
+  --surface: #fbfcf9;
+  --surface-2: #e6ebe1;
+  --ink: #14231b;
+  --text-2: #4d5f54;  /* 5.5:1+ on every light surface */
+  --muted: #55675b;
+  --line: #d3dccf;
+  --line-strong: #6f8074;
+  --answer: #7d5f00;  /* ochre ink; the yellow lives in the highlighter band */
+  --answer-fill: #14231b;  /* paper theme: chalkboard-dark fills with yellow text */
+  --answer-rgb: 125 95 0;
+  --on-answer-rgb: 243 211 74;
+  --question-rgb: 46 66 55;
+  --fact-rgb: 27 98 153;
+  --on-answer: #f3d34a;
+  --answer-tint: #f3d34a;
+  --fact: #1b6299;
+  --fact-ink: #1b6299;
+  --question: #2e4237;
+  --question-ink: #2e4237;
+  --thread: #7d5f00;  /* ochre line over a yellow highlighter band */
+  --band: rgb(243 211 74 / 0.4);
+  --node-stroke: #14231b;
+  --grid-dot: rgb(20 35 27 / 0.09);
+  --shadow: 0 1px 0 rgb(20 35 27 / 0.04), 0 12px 32px -18px rgb(20 35 27 / 0.25);
 }
 
 /* Theme switch. With View Transitions the new theme is revealed in a circle from the toggle
@@ -105,9 +128,22 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.22e
 p { margin: 0 0 1em; }
 h1, h2, h3, h4 { margin: 0; font-weight: 500; text-wrap: balance; }
 p, li { text-wrap: pretty; }
+/* smooth scrolling (lib/smooth-scroll.js): Lenis' required rules */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent], .lenis [data-scroll] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+/* disclosures (All steps, Model details, Technical details) open and close smoothly where supported */
+:root { interpolate-size: allow-keywords; }
+details::details-content { height: 0; overflow: clip; transition: height 360ms var(--ease), content-visibility 360ms allow-discrete; }
+details[open]::details-content { height: auto; }
+@media (prefers-reduced-motion: reduce) { details::details-content { transition: none; } }
+/* controls that change shape (lib/useShapeMorph.js): content never spills while the size springs */
+.morph { overflow: hidden; white-space: nowrap; }
 ::selection { background: var(--answer-fill); color: var(--on-answer); }
+html { caret-color: var(--answer); accent-color: var(--answer-fill); scrollbar-color: var(--line-strong) var(--bg); }
 
-:focus-visible { outline: 2px solid var(--answer); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--answer); outline-offset: 3px; border-radius: var(--radius-xs); }
 :root[data-theme="light"] :focus-visible { outline-color: var(--ink); }
 
 .container { width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
@@ -115,8 +151,8 @@ p, li { text-wrap: pretty; }
 .mono { font-family: var(--font-mono); }
 /* workbench steps: a number and a plain instruction, so the order is obvious */
 .step { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 1.02rem/1.3 var(--font-ui); letter-spacing: -0.005em; color: var(--ink); }
-.step-num { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; font: 700 0.74rem/1 var(--font-mono); background: var(--ink); color: var(--bg); }
-.eyebrow { font: 500 0.72rem/1.35 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+.step-num { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; font: 700 var(--fs-label)/1 var(--font-mono); background: var(--ink); color: var(--bg); }
+.label { font: 500 var(--fs-label)/1.4 var(--font-ui); color: var(--text-2); }
 .muted { color: var(--text-2); }
 .visually-hidden {
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
@@ -126,13 +162,13 @@ p, li { text-wrap: pretty; }
 .skip-link:focus { top: 12px; }
 
 /* long-form pages */
-.prose { max-width: 68ch; font-size: 1.04rem; line-height: 1.72; }
-.prose h2 { scroll-margin-top: 24px; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem); line-height: 1.15; margin: 2.2em 0 0.6em; letter-spacing: -0.015em; }
-.prose h3 { font-size: 1.06rem; font-weight: 600; margin: 1.8em 0 0.4em; }
+.prose { max-width: 68ch; font-size: var(--fs-body-lg); line-height: 1.72; }
+.prose h2 { scroll-margin-top: 24px; font-family: var(--font-display); font-weight: 400; font-size: var(--fs-h2); line-height: 1.15; margin: 2.2em 0 0.6em; letter-spacing: -0.015em; }
+.prose h3 { font-size: var(--fs-body-lg); font-weight: 600; margin: 1.8em 0 0.4em; }
 .prose ul, .prose ol { padding-left: 1.2em; margin: 0 0 1.2em; }
 .prose li { margin: 0.3em 0; }
 .prose li::marker { color: var(--text-2); }
-.prose code { font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+.prose code { font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: var(--radius-xs); overflow-wrap: anywhere; }
 .prose strong { font-weight: 600; }
 .prose a { text-decoration-color: var(--line-strong); }
 

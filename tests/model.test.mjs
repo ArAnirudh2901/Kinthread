@@ -17,6 +17,7 @@ test('model parts match their checksums', { skip }, async () => {
     for (const p of [f.json, ...f.parts]) {
       const buf = await read(RUNTIME.model.base + p.file);
       assert.equal(buf.length, p.bytes, p.file);
+      assert.ok(p.bytes <= 25 * 1024 * 1024, `${p.file}: Cloudflare Pages rejects files over 25 MiB`);
       assert.equal(createHash('sha256').update(buf).digest('hex'), p.sha256, p.file);
     }
   }

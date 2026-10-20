@@ -1,5 +1,6 @@
 'use client';
-import { forwardRef, useId, useMemo } from 'react';
+import { forwardRef, useId, useMemo, useRef } from 'react';
+import { useShapeMorph } from '@/lib/useShapeMorph';
 import { contradictions } from '@/lib/consistency';
 import { spokenClue } from '@/lib/exam';
 import { WORD_LIMIT } from '@/lib/story';
@@ -8,11 +9,17 @@ import s from './StoryEditor.module.css';
 const StoryEditor = forwardRef(function StoryEditor({ story, words, tokens, maxTokens, over, onChange, onClear, onSubmit, undo, onUndo }, ref) {
   const id = useId();
   const issues = useMemo(() => contradictions(story), [story]);
+  const clearBox = useRef(null);
+  useShapeMorph(clearBox, undo ? 'undo' : 'idle');   // Clear becomes the undo toast and back
   return (
     <div className={s.editor}>
       <div className={s.head}>
         <label htmlFor={id} className="step"><span className="step-num" aria-hidden="true">1</span>Write a family story</label>
-        <button type="button" className={s.clear} onClick={onClear} disabled={!story}>Clear</button>
+        <div ref={clearBox} className={`${s.clearBox} morph`} data-state={undo ? 'undo' : 'idle'} role={undo ? 'status' : undefined}>
+          {undo
+            ? <><span className={s.undoText}>Story cleared</span><button type="button" className={s.undoBtn} onClick={onUndo}>Undo</button><span className={s.drain} aria-hidden="true" /></>
+            : <button type="button" className={s.clear} onClick={onClear} disabled={!story}>Clear</button>}
+        </div>
       </div>
       <textarea
         ref={ref}
@@ -38,12 +45,6 @@ const StoryEditor = forwardRef(function StoryEditor({ story, words, tokens, maxT
           {over && <strong className={s.overText}>{tokens != null && tokens > maxTokens ? ' — too long for the model' : ' — over the limit'}</strong>}
         </span>
       </div>
-      {undo && (
-        <p className={s.undo} role="status">
-          Story cleared.
-          <button type="button" className={s.undoBtn} onClick={onUndo}>Undo</button>
-        </p>
-      )}
       {issues.length > 0 && (
         <div className={s.tip} role="status">
           <strong>The story contradicts itself.</strong> {issues[0].message}

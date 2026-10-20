@@ -31,6 +31,7 @@ export class GraphEngine {
     this.links = new Map();   // key -> { a, b, el, alpha, ta }
     this.els = new Map();
     this.linkEls = new Map();
+    this.labelEls = new Map();   // key -> relation tag that rides the middle of its link
     this.w = 0;
     this.h = 0;
     this.awake = false;
@@ -43,6 +44,12 @@ export class GraphEngine {
     if (el) this.els.set(name, el); else this.els.delete(name);
     const n = this.nodes.get(name);
     if (n && el) { n.el = el; this.writeNode(n); }
+  }
+
+  attachLabel(key, el) {
+    if (el) this.labelEls.set(key, el); else this.labelEls.delete(key);
+    const l = this.links.get(key);
+    if (l) { l.label = el || null; this.writeLink(l); }
   }
 
   attachLink(key, el) {
@@ -86,7 +93,7 @@ export class GraphEngine {
     for (const [p, q] of links) {
       const key = `${p}\u0000${q}`;
       wanted.add(key);
-      if (!this.links.has(key)) this.links.set(key, { a: p, b: q, el: this.linkEls.get(key), alpha: 0, ta: 1 });
+      if (!this.links.has(key)) this.links.set(key, { a: p, b: q, el: this.linkEls.get(key), label: this.labelEls.get(key) || null, alpha: 0, ta: 1 });
     }
     for (const key of this.links.keys()) if (!wanted.has(key)) this.links.delete(key);
     if (instant) this.settleNow(); else this.wake();
@@ -227,12 +234,21 @@ export class GraphEngine {
 
   writeLink(l) {
     if (!l.el) return;
-    const p = this.nodes.get(l.a), q = this.nodes.get(l.b);
+    let p = this.nodes.get(l.a), q = this.nodes.get(l.b);
     if (!p || !q) return;
-    l.el.setAttribute('x1', p.x.toFixed(1));
-    l.el.setAttribute('y1', p.y.toFixed(1));
-    l.el.setAttribute('x2', q.x.toFixed(1));
-    l.el.setAttribute('y2', q.y.toFixed(1));
-    l.el.style.opacity = (l.alpha * Math.min(p.alpha, q.alpha)).toFixed(3);
+    if (l.label?.dataset.rev === '1') [p, q] = [q, p];   // the arrow points to whoever the relation names
+    // a labelled link is a family fact: it stops at the relative's edge so its arrowhead shows
+    const dx = q.x - p.x, dy = q.y - p.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+    const r0 = l.label ? 9 : 0, r1 = l.label ? 13 : 0;
+    l.el.setAttribute('x1', (p.x + ux * r0).toFixed(1));
+    l.el.setAttribute('y1', (p.y + uy * r0).toFixed(1));
+    l.el.setAttribute('x2', (q.x - ux * r1).toFixed(1));
+    l.el.setAttribute('y2', (q.y - uy * r1).toFixed(1));
+    const op = (l.alpha * Math.min(p.alpha, q.alpha)).toFixed(3);
+    l.el.style.opacity = op;
+    if (l.label) {
+      l.label.setAttribute('transform', `translate(${((p.x + q.x) / 2).toFixed(1)} ${((p.y + q.y) / 2).toFixed(1)})`);
+      l.label.style.opacity = op;
+    }
   }
 }

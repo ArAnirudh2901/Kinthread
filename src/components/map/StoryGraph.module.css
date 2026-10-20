@@ -6,19 +6,21 @@
 .download {
   flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; margin-left: auto;
   border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
-  font: 600 0.74rem/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
-  transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), transform 0.12s var(--ease);
+  font: 600 var(--fs-label)/1 var(--font-ui); white-space: nowrap;
+  transition: color var(--t) var(--ease), border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), transform 0.12s var(--ease);
 }
 .download svg { overflow: visible; }
-.dlArrow { transition: transform 0.3s var(--spring); }
+.dlArrow { transition: transform 0.3s var(--ease); }
 @media (hover: hover) and (pointer: fine) { .download:hover { border-color: var(--ink); background: var(--surface-2); } }
 @media (hover: hover) and (pointer: fine) { .download:hover .dlArrow { transform: translateY(1.5px); } }
 .download:active { transform: scale(0.94); }
-.download[data-state="busy"] .dlArrow { animation: dl-drop 0.7s var(--ease) infinite; }
-.download[data-state="done"] { border-color: var(--fact-ink); color: var(--fact-ink); }
+/* busy and done are circles; done and copied fill with the answer colour (button -> loader -> check -> button) */
+.download[data-state="busy"], .download[data-state="done"] { width: 32px; padding: 0; gap: 0; justify-content: center; }
+.download[data-state="done"], .download[data-state="copied"] { background: var(--answer-fill); border-color: var(--answer-fill); color: var(--on-answer); }
+.spin { transform-box: fill-box; transform-origin: center; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .download[data-state="failed"] { border-color: var(--question); color: var(--question-ink); }
 @keyframes dl-drop { 0% { transform: translateY(-3px); opacity: 0; } 60% { transform: translateY(1px); opacity: 1; } 100% { transform: translateY(2px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .download[data-state="busy"] .dlArrow { animation: none; } }
 .box { position: relative; width: 100%; transition: opacity 200ms var(--ease); }
 .box[data-stale] { opacity: 0.45; }
 /* phones: the map uses the card's padding too */
@@ -28,8 +30,14 @@
 .ghost path { stroke: var(--line-strong); stroke-dasharray: 1 6; stroke-linecap: round; }
 .ghost circle { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 3 3; }
 .ghost text { font: 600 11px/1 var(--font-mono); fill: var(--text-2); }
+/* live map: a link the model can name is a family fact (blue chalk, arrow to the relative, relation tag) */
+.relLine { stroke: var(--fact); stroke-width: 1.6; stroke-linecap: round; opacity: 0; }
+.relHead { fill: var(--fact); }
+.relTag { opacity: 0; pointer-events: none; }
+.relTag rect { fill: var(--surface); stroke: var(--fact-ink); stroke-width: 1.2; }
+.relTag text { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.02em; fill: var(--ink); }
 .mention { stroke: var(--text-2); stroke-width: 1; stroke-dasharray: 2 5; stroke-linecap: round; opacity: 0; }
-.legend { display: flex; align-items: center; gap: 8px; margin: 0; font: 500 0.7rem/1.3 var(--font-mono); letter-spacing: 0.04em; color: var(--text-2); }
+.legend { display: flex; align-items: center; gap: 8px; margin: 0; font: 500 var(--fs-label)/1.3 var(--font-ui); color: var(--text-2); }
 .dash { width: 22px; height: 0; border-top: 1px dashed var(--text-2); }
 
 /* the drawn answer is hidden until its timeline starts */
@@ -39,7 +47,7 @@
 .pencil { fill: none; stroke: var(--fact-ink); stroke-width: 1.6; stroke-dasharray: 5 5; stroke-linecap: round; }
 .stub { fill: none; stroke: var(--line-strong); stroke-width: 1.6; stroke-linecap: round; }
 .gap rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
-.gap text { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.02em; text-transform: uppercase; fill: var(--text-2); }
+.gap text { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.02em; fill: var(--text-2); }
 .tag rect { fill: var(--surface); stroke: var(--ink); stroke-width: 1; }
 .tag text { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.02em; fill: var(--ink); }
 .box[data-view="tentative"] .tag rect { stroke: var(--fact-ink); stroke-dasharray: 3 2; }
@@ -50,7 +58,7 @@
 .person[data-role="person"], .person[data-role="a"], .person[data-role="b"], .person[data-role="ab"] { cursor: pointer; }
 .box[data-view]:not([data-view="live"]) .person { cursor: default; }
 .hit { fill: transparent; }
-.dot { fill: var(--fact); stroke: var(--node-stroke); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; transition: transform 0.2s var(--spring), fill 0.2s var(--ease), stroke 0.2s var(--ease); }
+.dot { fill: var(--fact); stroke: var(--node-stroke); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; transition: transform 0.2s var(--ease), fill 0.2s var(--ease), stroke 0.2s var(--ease); }
 .person[data-role="a"] .dot, .person[data-role="b"] .dot, .person[data-role="ab"] .dot { fill: var(--surface); stroke: var(--question); stroke-width: 2.5; }
 .person[data-role="lit"] .dot { fill: var(--answer); stroke: var(--ink); stroke-width: 1.5; }
 .person[data-role="via"] .dot { fill: var(--fact); }
@@ -58,7 +66,7 @@
 .letter { font: 600 11px/1 var(--font-mono); fill: var(--ink); pointer-events: none; }
 .name { font: 500 14px/1 var(--font-ui); fill: var(--ink); pointer-events: none; }
 .person[data-role="person"] .name { fill: var(--text-2); }
-.role { font: 500 10px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; fill: var(--text-2); pointer-events: none; }
+.role { font: 500 12px/1 var(--font-ui); fill: var(--text-2); pointer-events: none; }
 
 @media (forced-colors: active) {
   .band { display: none; }
@@ -70,7 +78,7 @@
 
 /* worked answer: copper = the question, teal = facts from the story, lime = the answer */
 .genRow line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 6; }
-.genLabels text { font: 500 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--text-2); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.genLabels text { font: 500 12px/1 var(--font-ui); fill: var(--text-2); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
 .qLine { fill: none; stroke: var(--question); stroke-width: 1.8; stroke-dasharray: 6 6; stroke-linecap: round; }
 .question circle { fill: var(--surface); stroke: var(--question); stroke-width: 1.8; }
 .question text { font: 700 14px/1 var(--font-ui); fill: var(--question-ink); }
@@ -93,7 +101,7 @@
 .litCheck { fill: none; stroke: var(--on-answer); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .person[data-role="b"] .letter { paint-order: stroke; }
 .legendBlock { display: grid; gap: 6px; }
-.keys { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; font-size: 0.78rem; color: var(--text-2); }
+.keys { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-label); color: var(--text-2); }
 .keys li { display: inline-flex; align-items: center; gap: 6px; }
 .keyQuestion, .keyFact, .keyAnswer, .keyMention { display: inline-block; width: 22px; height: 0; }
 .keyQuestion { border-top: 2px dashed var(--question); }
@@ -105,18 +113,18 @@
 .keyShapes .ci { border-radius: 50%; }
 .keyShapes .sq { border-radius: 2px; }
 .keyShapes .di { transform: rotate(45deg) scale(0.8); }
-.readHint { margin: 0; font-size: 0.8rem; color: var(--text-2); }
+.readHint { margin: 0; font-size: var(--fs-label); color: var(--text-2); }
 .readHint b { color: var(--ink); font-weight: 600; }
 .box[data-scroll] { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 /* a map wider than its box: soft edges show there is more to scroll */
-.box[data-scroll] { -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 36px), transparent); scrollbar-width: thin; }
-.box[data-scroll][data-at-start] { -webkit-mask-image: linear-gradient(to right, #000, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000, #000 calc(100% - 36px), transparent); }
-.box[data-scroll][data-at-end] { -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000); mask-image: linear-gradient(to right, transparent, #000 24px, #000); }
+.box[data-scroll] { -webkit-mask-image: linear-gradient(to right, transparent, var(--bg) 24px, var(--bg) calc(100% - 36px), transparent); mask-image: linear-gradient(to right, transparent, var(--bg) 24px, var(--bg) calc(100% - 36px), transparent); scrollbar-width: thin; }
+.box[data-scroll][data-at-start] { -webkit-mask-image: linear-gradient(to right, var(--bg), var(--bg) calc(100% - 36px), transparent); mask-image: linear-gradient(to right, var(--bg), var(--bg) calc(100% - 36px), transparent); }
+.box[data-scroll][data-at-end] { -webkit-mask-image: linear-gradient(to right, transparent, var(--bg) 24px, var(--bg)); mask-image: linear-gradient(to right, transparent, var(--bg) 24px, var(--bg)); }
 .box[data-scroll][data-at-start][data-at-end] { -webkit-mask-image: none; mask-image: none; }
 
 /* never squeeze a scrolling map below its minimum readable scale: it scrolls instead */
 .box[data-scroll] .svg { max-width: none; }
 
 .tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
-.manualLink { flex: 1 1 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: 0.85rem var(--font-mono); }
+.manualLink { flex: 1 1 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: var(--fs-small) var(--font-mono); }

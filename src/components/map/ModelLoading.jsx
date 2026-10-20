@@ -1,6 +1,6 @@
 'use client';
 import Mark from '@/components/brand/Mark';
-import { startModel } from '@/lib/model/client';
+import { requestModel } from '@/lib/model/gate';
 import { useFollowedProgress } from '@/lib/useFollowedProgress';
 import { AskCopy, DownloadStatus, WeaveStage } from './Weave';
 import s from './ModelLoading.module.css';
@@ -16,7 +16,7 @@ export default function ModelLoading({ model }) {
   if (model.status === 'idle') {
     return (
       <div className={s.panel}>
-        <WeaveStage progress={0}><AskCopy total={model.total} onStart={() => startModel()} /></WeaveStage>
+        <WeaveStage progress={0}><AskCopy total={model.total} onStart={(e) => requestModel(e.currentTarget)} /></WeaveStage>
       </div>
     );
   }

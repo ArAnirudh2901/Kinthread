@@ -1,7 +1,8 @@
 'use client';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { gsap, prefersReducedMotion, useGSAP } from '@/lib/gsap';
-import { splitQuestion } from '@/lib/exam';
+import { prepare, splitQuestion } from '@/lib/exam';
+import { askModel } from '@/lib/model/client';
 import { buildPath, mentionLinks } from '@/lib/story';
 import ModelError from './ModelError';
 import ModelLoading from './ModelLoading';
@@ -51,6 +52,35 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
   const onStep = useCallback((st) => { setProgress(st); if (st.step === st.steps - 1) setDrawn(st.runKey); }, []);
   const links = useMemo(() => (detected === story ? mentionLinks(splitQuestion(story).story, people) : []), [detected, story, people]);
   const ready = model.status === 'ready';
+  // before anything is solved, ask the model what each linked pair is to each other: a confident answer labels the
+  // link with its relation (q is p's ...); anything else stays a dashed "mentioned together"
+  const linkKey = links.map((l) => l.join('\u0000')).join('|');
+  const [relations, setRelations] = useState({ key: '', map: {} });
+  const relKey = `${story}\u0001${linkKey}`;
+  useEffect(() => {
+    if (!ready || !links.length) return;
+    let live = true;
+    (async () => {
+      const p = prepare(story), map = {};
+      const extra = [...(state.extra || []), ...p.letters];
+      const said = (word) => new RegExp(`\\b${word}\\b`, 'i').test(story);
+      for (const [a, b] of links) {
+        try {
+          // both ways: "a is b's X" (a was mentioned first: the usual "A is the brother of B") and "b is a's Y";
+          // prefer the one the story states in words, so the label never rests on a guessed gender
+          const [ab, ba] = await Promise.all([askModel(p.model, b, a, extra), askModel(p.model, a, b, extra)]);
+          if (!live) return;
+          const first = ab.result?.kind === 'answer' ? ab.result.relation : null;
+          const second = ba.result?.kind === 'answer' ? ba.result.relation : null;
+          const pick = first && (said(first) || !second || !said(second)) ? { rel: first, rev: true } : second ? { rel: second, rev: false } : null;
+          if (pick) map[`${a}\u0000${b}`] = pick;
+        } catch { /* unlabeled: the dashed link still shows they are mentioned together */ }
+      }
+      if (live) setRelations({ key: relKey, map });
+    })();
+    return () => { live = false; };
+  }, [ready, relKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const linkRelations = relations.key === relKey ? relations.map : {};
 
   let key, body;
   if (run?.status === 'error') { key = `trace-error-${run.id}`; body = <TraceError error={run.error} onRetry={onRetryTrace} />; }
@@ -86,7 +116,8 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
                   <div className={`${rs.result} ${stale ? s.staleDim : ''}`}><Headline run={shown} shown={drawn === shown.id} tentative={view.variant === 'tentative'} /></div>
                 )}
                 <ErrorBoundary resetKey={shown?.id ?? story} fallback={<p className={s.idle}>The map couldn&rsquo;t be drawn for this story. The answer and its steps are below.</p>}>
-                <StoryGraph people={people} links={links} a={a} b={b} view={view} stale={stale} share={shown ? { story: shown.story, a: shown.a, b: shown.b } : null} onPlayer={onPlayer} onStep={onStep} onPick={onPick}>
+                <StoryGraph
+            relations={linkRelations} people={people} links={links} a={a} b={b} view={view} stale={stale} share={shown ? { story: shown.story, a: shown.a, b: shown.b } : null} onPlayer={onPlayer} onStep={onStep} onPick={onPick}>
                   {view && !stale && (view.variant === 'found' || view.variant === 'tentative') && (
                     <StepCaption run={shown} tentative={view.variant === 'tentative'} progress={progress?.runKey === shown.id ? progress : null} player={player} />
                   )}
