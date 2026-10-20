@@ -40,3 +40,6 @@
 }
 @media (hover: hover) and (pointer: fine) { .start:hover { filter: brightness(1.05); } }
 .start:active { transform: scale(0.96); }
+
+/* downloading or waiting to: the shared weave stage, sized for the panel */
+.panel { display: grid; gap: 12px; height: clamp(420px, 60vh, 560px); }

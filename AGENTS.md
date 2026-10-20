@@ -164,3 +164,6 @@ will decide later).
   family shows faint and weaves in as bytes arrive (weave fills the stage); large tabular percentage + "Downloading the
   model"; shows "Ready" then closes (first-visit flag latched per page load). Mark: only threads animate (diamond was
   dashed). Harness: `SLOW=<ms per MB>` throttles model parts to see loading locally.
+- 2026-10-20: one loading design everywhere (`map/Weave.jsx`: WeaveStage + DownloadStatus + AskCopy), used by the
+  full-screen window on every device and by the map panel; the window also opens for any real network download
+  (cache cleared/unavailable), not only first visits; quick loads from the device show nothing.
