@@ -176,3 +176,5 @@ will decide later).
   in as their thread arrives, "Ready" and closing wait for the weave to complete (`onWoven`).
 - 2026-10-20: loader weave = download progress exactly (worker reports every ~32 ms, no pacing or smoothing, set
   before paint); verified: weave 1.000 when the download completes, never steps back, one canvas instance (no reload).
+- 2026-10-20: loader weave colours: woven threads and reached people turn red (a red network grows from the first
+  person); threads still to come are neutral grey (`buf.lg`/`buf.pg`); the answer path stays brightest and thickest.
