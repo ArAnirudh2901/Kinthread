@@ -21,7 +21,7 @@ Claude memory noted in CLAUDE.md), so the next model can continue cold. Add a li
 | [Kinthread-llm-model](https://github.com/ArAnirudh2901/Kinthread-llm-model) | `~/Generative_AI/Kinthread-llm-model` | model code (create, train, test, export), checkpoints, data, exported model |
 | [LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch) | `~/Generative_AI/LLM_from_Scratch` | the whole learning project; canonical source of the model code (`2_Training_Tiny_LLM`) |
 
-Model change flow: retrain/export in LLM-From-Scratch, then `npm run sync` here (refreshes `vendor/kinship/`; commit it),
+Model change flow: retrain/export in LLM-From-Scratch, then `bun run sync` here (refreshes `vendor/kinship/`; commit it),
 and publish the model repo (see its AGENTS.md).
 
 Pushing: if `gh` is signed in as someone else, authenticate the single push as the owner:
@@ -36,7 +36,7 @@ questions, parents and teachers, curious visitors on phones. Renamed from "Kinsh
 `~/Web_Dev/kinship-qa`; storage keys are `kinthread-*`).
 
 The models come from the LLM repo, `~/Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (`web/`: engine.c,
-kinship.js, six WASM builds, model files; see that repo's AGENTS.md). `npm run sync` copies them into
+kinship.js, six WASM builds, model files; see that repo's AGENTS.md). `bun run sync` copies them into
 `public/r/<hash>/` and `public/m/<hash>/` after SHA-256 checks (generated, not committed; `KINSHIP_SRC` overrides).
 Without the LLM repo (a fresh clone) it uses the committed copy in `vendor/kinship/` (final model + runtime, 59 MB,
 `binary` in .gitattributes, every file SHA-256-checked against its manifest.json). After a model change, sync from the
@@ -46,7 +46,7 @@ will decide later).
 ## Owner's hard rules
 
 - Never deploy from an agent session, with wrangler or any host: the owner deploys from their own account.
-  Local `npm run preview` is fine; give the owner the deploy commands instead (README).
+  Local `bun run preview` is fine; give the owner the deploy commands instead (README).
 - Commit only when asked; never push unless asked. Repo: https://github.com/ArAnirudh2901/Kinthread (public,
   Apache-2.0, branch `main`), checked out at `~/Web_Dev/kinthread`. It is hidden from the parent `~/Web_Dev` repo (the owner's other
   projects) through `~/Web_Dev/.git/info/exclude`: never commit Kinthread into `~/Web_Dev`.
@@ -67,11 +67,11 @@ will decide later).
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | dev server (runs sync first) |
-| `npm run build` | sync, `next build` (static export to `out/`), `scripts/postbuild.mjs` (_headers, per-page CSP, sw.js) |
-| `npm run check` | lint + all node tests + build: run before reporting work as done |
-| `npm test` | node tests only (`tests/*.test.mjs`, includes the real model) |
-| `npm run preview` | `wrangler pages dev out` on :8788 (local only) |
+| `bun run dev` | dev server (runs sync first) |
+| `bun run build` | sync, `next build` (static export to `out/`), `scripts/postbuild.mjs` (_headers, per-page CSP, sw.js) |
+| `bun run check` | lint + all node tests + build: run before reporting work as done |
+| `bun run test` | node tests only (`tests/*.test.mjs`, includes the real model) |
+| `bun run preview` | `wrangler pages dev out` on :8788 (local only) |
 | `node tools/harness/server.mjs` | serves `out/` on :8791 with COOP/COEP and no X-Frame-Options, for the browser harness |
 
 ## Map of the code
@@ -114,7 +114,7 @@ will decide later).
 
 ## Testing
 
-- `npm run check` must pass (114 tests on 2026-10-20). The solution-layout test covers 735 chain shapes at phone
+- `bun run check` must pass (114 tests on 2026-10-20). The solution-layout test covers 735 chain shapes at phone
   and desktop widths; the model test runs the real runtime on every example and on exam-style questions.
 - Browser harness: start `node tools/harness/server.mjs`, then open `http://127.0.0.1:8791/__solve.html` (every example at 1200 and 380 px,
   overlaps, controls, light theme) or `__export.html` (exam example plus PNG download in dark and light, 375 px) in

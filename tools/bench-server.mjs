@@ -1,5 +1,5 @@
 // Serves out/ with cross-origin isolation plus the WebGPU-vs-WebAssembly benchmark page.
-// Usage: npm run build && node tools/bench-server.mjs  ->  open http://127.0.0.1:8791/__gpu.html
+// Usage: bun run build && node tools/bench-server.mjs  ->  open http://127.0.0.1:8791/__gpu.html
 import { createServer } from 'node:http';
 import { readFile, stat, appendFile } from 'node:fs/promises';
 import path from 'node:path';

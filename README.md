@@ -89,19 +89,19 @@ The site's *How it works* and *Build log* pages go deeper, including how the mod
 
 ## Running it locally
 
-Requirements: Node.js 20.11 or newer. The model is included (see below).
+Requirements: [Bun](https://bun.sh) 1.3+ (package manager and script runner) and Node.js 20.11+ (the build scripts and tests run on Node). The model is included (see below).
 
 ```bash
 git clone https://github.com/ArAnirudh2901/Kinthread.git
 cd Kinthread
-npm install
-npm run dev          # http://localhost:3000
+bun install
+bun run dev          # http://localhost:3000
 ```
 
 ### Model files
 
 The final trained model is included: `vendor/kinship/` holds the weights, model settings and the WebAssembly
-runtime (17 files, 59 MB), so a clone works offline with nothing to download. `npm run sync`, which runs
+runtime (17 files, 59 MB), so a clone works offline with nothing to download. `bun run sync`, which runs
 automatically before `dev` and `build`, checks every file's size and SHA-256 against `vendor/kinship/manifest.json`
 and stops with instructions if anything differs. `.gitattributes` marks the folder binary, so git never changes a
 byte (no line-ending conversion, on any OS). Don't use Git LFS for this folder.
@@ -115,11 +115,11 @@ model refreshes `vendor/kinship/`, to be committed. Either way the files land in
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | development server (single-threaded: the dev server can't send the isolation headers) |
-| `npm run build` | sync, then a static export to `out/`, then `postbuild`: `_headers`, per-page CSP, service worker |
-| `npm run preview` | serves `out/` with Cloudflare's runtime and headers at http://localhost:8788 |
-| `npm test` | unit tests, plus model tests when the model files are present |
-| `npm run check` | lint + tests + build |
+| `bun run dev` | development server (single-threaded: the dev server can't send the isolation headers) |
+| `bun run build` | sync, then a static export to `out/`, then `postbuild`: `_headers`, per-page CSP, service worker |
+| `bun run preview` | serves `out/` with Cloudflare's runtime and headers at http://localhost:8788 |
+| `bun run test` | unit tests, plus model tests when the model files are present |
+| `bun run check` | lint + tests + build |
 
 ## Project structure
 
@@ -153,7 +153,7 @@ agent) picking up the work.
 ## Testing
 
 ```bash
-npm run check
+bun run check
 ```
 
 - **Unit tests:** the story reducer, kinship rules, exam-question parsing, force layout, and the solution layout.
@@ -170,12 +170,12 @@ The site is a static folder (`out/`), built for Cloudflare Pages. The model file
 direct upload from a machine that has them:
 
 ```bash
-npx wrangler whoami                     # make sure it is the account that should own the site
-npm run build
-npx wrangler pages deploy out --project-name kinthread
+bunx wrangler whoami                     # make sure it is the account that should own the site
+bun run build
+bunx wrangler pages deploy out --project-name kinthread
 ```
 
-Set `SITE_URL` at build time (for example `SITE_URL=https://kinthread.pages.dev npm run build`) so link previews
+Set `SITE_URL` at build time (for example `SITE_URL=https://kinthread.pages.dev bun run build`) so link previews
 use the right domain.
 
 The build already handles:
