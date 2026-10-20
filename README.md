@@ -89,7 +89,7 @@ The site's *How it works* and *Build log* pages go deeper, including how the mod
 
 ## Running it locally
 
-Requirements: Node.js 20.11 or newer, and the model files (see below).
+Requirements: Node.js 20.11 or newer. The model downloads on first run (see below).
 
 ```bash
 git clone https://github.com/ArAnirudh2901/Kinthread.git
@@ -100,21 +100,19 @@ npm run dev          # http://localhost:3000
 
 ### Model files
 
-The runtime and weights are not stored in this repo. `npm run sync`, which runs automatically before `dev` and
-`build`, copies them from the model project
-[LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch) (`2_Training_Tiny_LLM/web`). It checks every
-file against that project's `model_manifest.json` and puts them in hashed folders (`public/r/<hash>/`,
-`public/m/<hash>/`), so a new model can never be mixed with old code.
+The runtime and weights (about 62 MB) are not stored in git. `npm run sync`, which runs automatically before `dev`
+and `build`, fetches them for you:
 
-By default it looks for that project at `../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM`. Point
-`KINSHIP_SRC` at your copy if it lives elsewhere:
+- **Fresh clone:** it downloads the files pinned in `model.lock.json` from this repo's
+  [GitHub Release](https://github.com/ArAnirudh2901/Kinthread/releases), checks each one's SHA-256, and caches them in
+  `.model-cache/`. Nothing else to do.
+- **With the model project:** if [LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch) is checked out
+  at `../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (or `KINSHIP_SRC` points at it), it copies from there
+  instead, checked against that project's `model_manifest.json`, and updates `model.lock.json` when the model changes.
+  Publish a changed model with `npm run model:release` (owner only).
 
-```bash
-KINSHIP_SRC=/path/to/LLM-From-Scratch/2_Training_Tiny_LLM npm run dev
-```
-
-> The trained weights (`web/model/*.gz`, about 64 MB) are not published yet; they come from that project's
-> `export_web.py`. Without them there is no model to sync, and the model tests are skipped.
+Either way the files land in hashed folders (`public/r/<hash>/`, `public/m/<hash>/`), so a new model can never be
+mixed with old code.
 
 ### Commands
 
