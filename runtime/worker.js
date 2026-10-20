@@ -96,7 +96,7 @@ function tracker(total) {
     loaded += n;
     if (fromNetwork) network += n;
     const now = performance.now();
-    if (now - last > 90 || loaded >= total) {
+    if (now - last > 32 || loaded >= total) {   // ~30 reports a second: the loader's weave follows them exactly
       last = now;
       post({ type: 'progress', stage: 'download', loaded, total, network });
     }

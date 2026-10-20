@@ -174,3 +174,5 @@ will decide later).
 - 2026-10-20: loader weave reworked after a phone recording: breadth-first weave order from the top ancestor (each
   thread starts at someone drawn), steady pace (<= one full weave per 5 s, never ahead of the download), people bloom
   in as their thread arrives, "Ready" and closing wait for the weave to complete (`onWoven`).
+- 2026-10-20: loader weave = download progress exactly (worker reports every ~32 ms, no pacing or smoothing, set
+  before paint); verified: weave 1.000 when the download completes, never steps back, one canvas instance (no reload).

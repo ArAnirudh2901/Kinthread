@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useMotionMode } from '@/lib/useMotionMode';
 
 // Decorative 3D canvas. The WebGL code is a separate chunk loaded after the page is interactive.
@@ -21,7 +21,8 @@ export default function Constellation({ variant = 'hero', progress = 1, classNam
     return () => { alive = false; ctl.current?.destroy(); ctl.current = null; };
   }, [variant, mode]);
 
-  useEffect(() => { latest.current = progress; ctl.current?.setProgress(progress); }, [progress]);
+  // before paint, so the weave and the percentage beside it change in the same frame
+  useLayoutEffect(() => { latest.current = progress; ctl.current?.setProgress(progress); }, [progress]);
 
   return <canvas ref={ref} className={className} aria-hidden="true" />;
 }

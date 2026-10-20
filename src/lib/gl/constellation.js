@@ -50,7 +50,6 @@ const PALETTES = {
 };
 const FOVY = 0.62;
 const FILL = 0.8;
-const WEAVE_SECONDS = 5;   // the loader weaves at most this fast, one thread at a time, never ahead of the download
 const SPIN_TAU = 5;    // hero spin decays over ~3 tau, then the scene rests (no endless loop)
 const PULSE_END = 9;   // seconds the light keeps running down the thread
    // share of the narrower half field of view the family may use (the rest is margin)
@@ -98,7 +97,7 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   const pathNodes = new Set([graph.top, ...path.map((e) => edges[e].b)]);
   let C = PALETTES[themeNow()];
   let gl, line, point, buf = {};
-  let progress = variant === 'weave' ? 0 : 1, target = progress, lastDraw = 0;   // shown progress eases toward the download's
+  let progress = variant === 'weave' ? 0 : 1, target = progress;
   let running = false, visible = true, raf = 0, last = 0, lost = false;
   const t0 = performance.now();
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -218,13 +217,12 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // download progress lands in big steps (16 MB parts): glide toward it, so threads are drawn one by one
     if (variant === 'weave') {
-      const dt = Math.min(0.1, lastDraw ? (now - lastDraw) / 1000 : 0);
-      progress = still ? target : Math.min(target, progress + dt / WEAVE_SECONDS);
+      // the weave is the download: exactly its progress (reported every ~32 ms), so it reaches 100% with it, never later
+      progress = target;
+      canvas.dataset.weave = progress.toFixed(3);   // observable progress (tests, debugging)
       if (progress >= 1 && !woven) { woven = true; onWoven?.(); }
     }
-    lastDraw = now;
     const shownEdges = Math.floor(progress * edges.length + 1e-6);
     const grow = variant === 'weave' ? progress * edges.length - shownEdges : 0;
     bind(line, 12, [['a_pos', 3], ['a_other', 3], ['a_side', 1], ['a_color', 4], ['a_width', 1]]);
