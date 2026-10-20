@@ -139,6 +139,9 @@ function AddName({ story, people, onAdd }) {
           value={draft}
           onChange={(e) => { setDraft(e.target.value); setError(''); }}
           autoComplete="off"
+          autoCapitalize="words"
+          autoCorrect="off"
+          enterKeyHint="done"
           spellCheck={false}
           autoFocus
           aria-invalid={!!error || undefined}

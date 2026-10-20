@@ -22,7 +22,7 @@
 /* underline grows from the left on hover; stays for the current page */
 .nav a::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 9px; height: 1.5px; border-radius: 1px;
-  background: var(--lichen); transform: scaleX(0); transform-origin: left; transition: transform 0.3s var(--ease);
+  background: var(--answer); transform: scaleX(0); transform-origin: left; transition: transform 0.3s var(--ease);
 }
 @media (hover: hover) and (pointer: fine) { .nav a:hover { color: var(--ink); } }
 .nav a[aria-current="page"]::after { transform: scaleX(1); }
@@ -35,4 +35,4 @@
   .nav ul { gap: 28px; }
 }
 
-:root[data-theme="light"] .nav a::after { background: var(--copper); }
+:root[data-theme="light"] .nav a::after { background: var(--question); }

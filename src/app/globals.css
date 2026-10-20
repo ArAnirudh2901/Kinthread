@@ -3,23 +3,25 @@
 :root {
   color-scheme: dark;
   /* Mineral Signal, dark: a late-night cartography lab */
-  --bg: #10191d;
-  --surface: #17252a;
-  --surface-2: #203035;
-  --ink: #f0f0e8;
-  --text-2: #a8b8b3;
-  --muted: #a8b8b3;
-  --line: #2a3a3e;
-  --line-strong: #5f7376;     /* control borders, >= 3:1 */
-  --lichen: #d8f36a;
-  --sea: #79c8b7;
-  --sea-ink: #79c8b7;
-  --copper: #e39773;
-  --copper-ink: #e39773;
-  --thread: #d8f36a;
-  --band: rgb(216 243 106 / 0.14);
-  --node-stroke: #10191d;
-  --grid-dot: rgb(240 240 232 / 0.06);
+  --bg: #0f1423;
+  --surface: #161d30;
+  --surface-2: #1e2740;
+  --ink: #f1eadb;
+  --text-2: #b2ac9e;
+  --muted: #b2ac9e;
+  --line: #2a3248;
+  --line-strong: #6b7590;     /* control borders, >= 3:1 */
+  --answer: #ee5a40;          /* the red thread: answers, brand accent (lines, text) */
+  --answer-fill: #c93a26;     /* filled answer surfaces; --on-answer text is 4.8:1 on it */
+  --on-answer: #fff6ea;
+  --fact: #e2b04a;
+  --fact-ink: #e2b04a;
+  --question: #8fa2e6;
+  --question-ink: #9fb0ee;
+  --thread: #ee5a40;
+  --band: rgb(238 90 64 / 0.16);
+  --node-stroke: #0f1423;
+  --grid-dot: rgb(241 234 219 / 0.06);
   --shadow: 0 1px 0 rgb(0 0 0 / 0.25), 0 24px 48px -28px rgb(0 0 0 / 0.7);
 
   --font-display: var(--font-fraunces), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -40,22 +42,25 @@
 /* light: mineral paper (opt-in; dark is the default) */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f0f0e8;
-  --surface: #fafaf3;
-  --surface-2: #e7e9df;
-  --ink: #17252a;
-  --text-2: #5a6a6f;          /* palette #627176 is 4.43:1 on paper; this is 4.92:1 for small text */
-  --muted: #627176;
-  --line: #d5ddd4;
-  --line-strong: #7a8986;
-  --sea-ink: #2b6e60;
-  --copper: #c86e4b;
-  --copper-ink: #9a4f31;
-  --thread: #17252a;          /* ink line over a lichen highlighter band */
-  --band: #d8f36a;
-  --node-stroke: #17252a;
-  --grid-dot: rgb(23 37 42 / 0.1);
-  --shadow: 0 1px 0 rgb(23 37 42 / 0.04), 0 12px 32px -18px rgb(23 37 42 / 0.25);
+  --bg: #f4efe4;
+  --surface: #fbf8f1;
+  --surface-2: #eae3d4;
+  --ink: #1a2033;
+  --text-2: #585b6b;          /* palette #627176 is 4.43:1 on paper; this is 4.92:1 for small text */
+  --muted: #636677;
+  --line: #ddd5c4;
+  --line-strong: #80869a;
+  --answer: #b5311e;
+  --answer-fill: #b5311e;
+  --fact: #865c05;
+  --fact-ink: #865c05;
+  --question: #3b4da6;
+  --question-ink: #3b4da6;
+  --thread: #b5311e;          /* ink line over a lichen highlighter band */
+  --band: rgb(181 49 30 / 0.12);
+  --node-stroke: #1a2033;
+  --grid-dot: rgb(26 32 51 / 0.09);
+  --shadow: 0 1px 0 rgb(26 32 51 / 0.04), 0 12px 32px -18px rgb(26 32 51 / 0.25);
 }
 
 /* Theme switch. With View Transitions the new theme is revealed in a circle from the toggle
@@ -96,13 +101,13 @@ button, input, textarea, select { font: inherit; color: inherit; letter-spacing:
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
-@media (hover: hover) and (pointer: fine) { a:hover { text-decoration-color: var(--copper); } }
+@media (hover: hover) and (pointer: fine) { a:hover { text-decoration-color: var(--question); } }
 p { margin: 0 0 1em; }
 h1, h2, h3, h4 { margin: 0; font-weight: 500; text-wrap: balance; }
 p, li { text-wrap: pretty; }
-::selection { background: var(--lichen); color: #17252a; }
+::selection { background: var(--answer-fill); color: var(--on-answer); }
 
-:focus-visible { outline: 2px solid var(--lichen); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--answer); outline-offset: 3px; border-radius: 4px; }
 :root[data-theme="light"] :focus-visible { outline-color: var(--ink); }
 
 .container { width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
@@ -133,4 +138,9 @@ p, li { text-wrap: pretty; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* more contrast asked for: lines and secondary text at full strength */
+@media (prefers-contrast: more) {
+  :root, :root[data-theme="light"] { --line: var(--line-strong); --text-2: var(--ink); }
 }

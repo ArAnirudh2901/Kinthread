@@ -15,8 +15,8 @@
 @media (hover: hover) and (pointer: fine) { .download:hover .dlArrow { transform: translateY(1.5px); } }
 .download:active { transform: scale(0.94); }
 .download[data-state="busy"] .dlArrow { animation: dl-drop 0.7s var(--ease) infinite; }
-.download[data-state="done"] { border-color: var(--sea-ink); color: var(--sea-ink); }
-.download[data-state="failed"] { border-color: var(--copper); color: var(--copper-ink); }
+.download[data-state="done"] { border-color: var(--fact-ink); color: var(--fact-ink); }
+.download[data-state="failed"] { border-color: var(--question); color: var(--question-ink); }
 @keyframes dl-drop { 0% { transform: translateY(-3px); opacity: 0; } 60% { transform: translateY(1px); opacity: 1; } 100% { transform: translateY(2px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .download[data-state="busy"] .dlArrow { animation: none; } }
 .box { position: relative; width: 100%; transition: opacity 200ms var(--ease); }
@@ -36,27 +36,26 @@
 .draw { visibility: hidden; }
 .band { fill: none; stroke: var(--band); stroke-width: 11; stroke-linecap: round; }
 .thread { fill: none; stroke: var(--thread); stroke-width: 1.9; stroke-linecap: round; }
-.pencil { fill: none; stroke: var(--sea-ink); stroke-width: 1.6; stroke-dasharray: 5 5; stroke-linecap: round; }
+.pencil { fill: none; stroke: var(--fact-ink); stroke-width: 1.6; stroke-dasharray: 5 5; stroke-linecap: round; }
 .stub { fill: none; stroke: var(--line-strong); stroke-width: 1.6; stroke-linecap: round; }
 .gap rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
 .gap text { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.02em; text-transform: uppercase; fill: var(--text-2); }
 .tag rect { fill: var(--surface); stroke: var(--ink); stroke-width: 1; }
 .tag text { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.02em; fill: var(--ink); }
-.box[data-view="tentative"] .tag rect { stroke: var(--sea-ink); stroke-dasharray: 3 2; }
-.halo { fill: none; stroke: var(--lichen); stroke-width: 2; opacity: 0; }
+.box[data-view="tentative"] .tag rect { stroke: var(--fact-ink); stroke-dasharray: 3 2; }
+.halo { fill: none; stroke: var(--answer); stroke-width: 2; opacity: 0; }
 
 /* people: positioned by the engine through the transform attribute */
 .person { opacity: 0; }
 .person[data-role="person"], .person[data-role="a"], .person[data-role="b"], .person[data-role="ab"] { cursor: pointer; }
 .box[data-view]:not([data-view="live"]) .person { cursor: default; }
 .hit { fill: transparent; }
-.dot { fill: var(--sea); stroke: var(--node-stroke); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; transition: transform 0.2s var(--spring), fill 0.2s var(--ease), stroke 0.2s var(--ease); }
-.person[data-role="a"] .dot, .person[data-role="b"] .dot, .person[data-role="ab"] .dot { fill: var(--surface); stroke: var(--copper); stroke-width: 2.5; }
-.person[data-role="lit"] .dot { fill: var(--lichen); stroke: var(--ink); stroke-width: 1.5; }
-.person[data-role="via"] .dot { fill: var(--sea); }
+.dot { fill: var(--fact); stroke: var(--node-stroke); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; transition: transform 0.2s var(--spring), fill 0.2s var(--ease), stroke 0.2s var(--ease); }
+.person[data-role="a"] .dot, .person[data-role="b"] .dot, .person[data-role="ab"] .dot { fill: var(--surface); stroke: var(--question); stroke-width: 2.5; }
+.person[data-role="lit"] .dot { fill: var(--answer); stroke: var(--ink); stroke-width: 1.5; }
+.person[data-role="via"] .dot { fill: var(--fact); }
 @media (hover: hover) and (pointer: fine) { .box[data-view="live"] .person:hover .dot { transform: scale(1.25); } }
 .letter { font: 600 11px/1 var(--font-mono); fill: var(--ink); pointer-events: none; }
-.person[data-role="lit"] .letter { fill: #17252a; }
 .name { font: 500 14px/1 var(--font-ui); fill: var(--ink); pointer-events: none; }
 .person[data-role="person"] .name { fill: var(--text-2); }
 .role { font: 500 10px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; fill: var(--text-2); pointer-events: none; }
@@ -72,34 +71,34 @@
 /* worked answer: copper = the question, teal = facts from the story, lime = the answer */
 .genRow line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 6; }
 .genLabels text { font: 500 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--text-2); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
-.qLine { fill: none; stroke: var(--copper); stroke-width: 1.8; stroke-dasharray: 6 6; stroke-linecap: round; }
-.question circle { fill: var(--surface); stroke: var(--copper); stroke-width: 1.8; }
-.question text { font: 700 14px/1 var(--font-ui); fill: var(--copper-ink); }
-.factLine { fill: none; stroke: var(--sea-ink); stroke-width: 2; stroke-linecap: round; }
-.factHead { fill: var(--sea-ink); }
-.factTag rect { fill: var(--surface); stroke: var(--sea-ink); stroke-width: 1.2; }
+.qLine { fill: none; stroke: var(--question); stroke-width: 1.8; stroke-dasharray: 6 6; stroke-linecap: round; }
+.question circle { fill: var(--surface); stroke: var(--question); stroke-width: 1.8; }
+.question text { font: 700 14px/1 var(--font-ui); fill: var(--question-ink); }
+.factLine { fill: none; stroke: var(--fact-ink); stroke-width: 2; stroke-linecap: round; }
+.factHead { fill: var(--fact-ink); }
+.factTag rect { fill: var(--surface); stroke: var(--fact-ink); stroke-width: 1.2; }
 .factTag text { font: 500 11.5px/1 var(--font-mono); fill: var(--ink); }
-.stepNum { fill: var(--sea-ink); }
+.stepNum { fill: var(--fact-ink); }
 .stepNumText { font: 700 10px/1 var(--font-mono); fill: var(--bg) !important; }
 .tentative .factLine { stroke-dasharray: 5 5; }
 .answerBand { fill: none; stroke: var(--band); stroke-width: 12; stroke-linecap: round; }
 .answerLine { fill: none; stroke: var(--thread); stroke-width: 2.4; stroke-linecap: round; }
 .answerHead { fill: var(--thread); }
-.answerTag rect { fill: var(--lichen); stroke: var(--ink); stroke-width: 1; }
-.answerTag text { font: 600 12px/1 var(--font-mono); fill: #17252a; }
-.check { fill: none; stroke: #17252a; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.answerTag rect { fill: var(--answer-fill); stroke: var(--ink); stroke-width: 1; }
+.answerTag text { font: 600 12px/1 var(--font-mono); fill: var(--on-answer); }
+.check { fill: none; stroke: var(--on-answer); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tentative .answerLine { stroke-dasharray: 6 5; }
 .litGroup { opacity: 0; }
-.lit { fill: var(--lichen); stroke: var(--ink); stroke-width: 1.5; }
-.litCheck { fill: none; stroke: #17252a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lit { fill: var(--answer-fill); stroke: var(--ink); stroke-width: 1.5; }
+.litCheck { fill: none; stroke: var(--on-answer); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .person[data-role="b"] .letter { paint-order: stroke; }
 .legendBlock { display: grid; gap: 6px; }
 .keys { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; font-size: 0.78rem; color: var(--text-2); }
 .keys li { display: inline-flex; align-items: center; gap: 6px; }
 .keyQuestion, .keyFact, .keyAnswer, .keyMention { display: inline-block; width: 22px; height: 0; }
-.keyQuestion { border-top: 2px dashed var(--copper); }
-.keyFact { border-top: 2px solid var(--sea-ink); }
-.keyAnswer { border-top: 3px solid var(--lichen); }
+.keyQuestion { border-top: 2px dashed var(--question); }
+.keyFact { border-top: 2px solid var(--fact-ink); }
+.keyAnswer { border-top: 3px solid var(--answer); }
 .keyMention { border-top: 1px dashed var(--text-2); }
 .keyShapes { display: inline-flex; gap: 3px; }
 .keyShapes i { width: 9px; height: 9px; border: 1.5px solid var(--text-2); }

@@ -18,11 +18,11 @@ export const metadata = {
   openGraph: { type: 'website', siteName: 'Kinthread', title: 'Kinthread — blood-relation puzzles, solved step by step', description: 'Find the thread that connects them. A from-scratch AI that runs in your browser.' },
 };
 
-export const viewport = { themeColor: '#10191d', colorScheme: 'dark light' };
+export const viewport = { themeColor: '#0f1423', colorScheme: 'dark light' };
 
 // Dark is the default; a stored choice of light is applied before first paint so it never flashes.
 // light theme before paint, with the browser chrome (status bar) to match
-const THEME = `try{if(localStorage.getItem('kinthread-theme')==='light'){document.documentElement.dataset.theme='light';var m=document.querySelector('meta[name=theme-color]');if(m)m.content='#f0f0e8'}}catch(e){}`;
+const THEME = `try{if(localStorage.getItem('kinthread-theme')==='light'){document.documentElement.dataset.theme='light';var m=document.querySelector('meta[name=theme-color]');if(m)m.content='#f4efe4'}}catch(e){}`;
 
 export default function RootLayout({ children }) {
   return (

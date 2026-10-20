@@ -7,7 +7,7 @@ const PROPS = [
   'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 'paint-order', 'font-family',
   'font-size', 'font-weight', 'font-style', 'letter-spacing', 'text-transform', 'text-anchor', 'dominant-baseline',
 ];
-const KEY = [['the question', '--copper', true], ['a fact from the story', '--sea-ink', false], ['the answer', '--lichen', false]];
+const KEY = [['the question', '--question', true], ['a fact from the story', '--fact-ink', false], ['the answer', '--answer', false]];
 
 const first = (family) => family.split(',')[0].trim().replace(/^["']|["']$/g, '');
 

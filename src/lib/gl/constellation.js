@@ -45,8 +45,8 @@ void main() {
 const hex = (h, a = 1) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255, a];
 // dark: light threads glowing additively; light: ink threads laid over paper
 const PALETTES = {
-  dark: { thread: hex('#a8b8b3', 0.16), spouse: hex('#79c8b7', 0.22), lit: hex('#d8f36a', 0.9), sea: hex('#79c8b7', 0.95), copper: hex('#e39773', 1), lichen: hex('#d8f36a', 1), pulse: hex('#f4ffd0', 1), additive: true },
-  light: { thread: hex('#17252a', 0.13), spouse: hex('#2b6e60', 0.28), lit: hex('#17252a', 0.8), sea: hex('#2b6e60', 0.9), copper: hex('#c86e4b', 1), lichen: hex('#7d9a14', 1), pulse: hex('#c86e4b', 1), additive: false },
+  dark: { thread: hex('#b2ac9e', 0.16), spouse: hex('#e2b04a', 0.22), lit: hex('#ee5a40', 0.9), sea: hex('#e2b04a', 0.95), copper: hex('#8fa2e6', 1), lichen: hex('#ee5a40', 1), pulse: hex('#ffd2c4', 1), additive: true },
+  light: { thread: hex('#1a2033', 0.13), spouse: hex('#865c05', 0.28), lit: hex('#b5311e', 0.85), sea: hex('#865c05', 0.9), copper: hex('#3b4da6', 1), lichen: hex('#b5311e', 1), pulse: hex('#b5311e', 1), additive: false },
 };
 const FOVY = 0.62;
 const FILL = 0.8;

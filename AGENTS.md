@@ -87,12 +87,12 @@ will decide later).
 
 ## Product decisions (don't undo without asking the owner)
 
-- Dark theme by default, light optional (View Transitions circle reveal). Mineral Signal palette tokens in `globals.css`.
+- Dark theme by default, light optional (View Transitions circle reveal). "Red thread" palette tokens (natural dyes: indigo ground/question, weld gold facts, madder red answer and accent, undyed wool text; tokens are role-named: `--answer`, `--answer-fill`, `--on-answer`, `--fact`, `--question`) in `globals.css`.
 - Three numbered steps: Write a family story / Pick two people / See how they're related.
 - The picker is the question: "How is [ ] related to [ ]?". Blanks fill in reading order (B, the person described,
   first; then A, the reference). Choosing both people, or swapping, solves at once. The button says "Solve".
 - No A/B role letters anywhere in the UI (they clashed with exam questions that name people A, B, C).
-- Colours: copper = the question (dashed arrow with "?"), teal = facts (numbered, quoted from the story), lime = the
+- Colours: indigo = the question (dashed arrow with "?"), gold = facts (numbered, quoted from the story), red = the
   answer. Pedigree shapes: square male, circle female, diamond not stated. Rows are generations.
 - Above the map: the question, which becomes the answer. Under the map: step caption and controls, then legend and
   Download. The full step list is folded. The last caption shows the working ("Victor's father's wife's daughter is
@@ -150,3 +150,6 @@ will decide later).
   banner, with no replay until Solve; live mode clears inline styles a worked-answer timeline left (a person could
   stay hidden). Hero spin decays and its light fades, then the render loop sleeps (0 rAF at rest); pointer wakes it.
   Press feedback on every control.
+- 2026-10-20: unique "Red thread" palette from natural dyes (indigo ground and question, weld gold facts, madder red
+  answer/accent, undyed wool text), role-named tokens, logo redrawn in the map's language (gold square/circle facts,
+  indigo question diamond, red answer thread and node), favicon to match; README images recaptured.

@@ -9,6 +9,6 @@
 }
 @media (min-width: 640px) { .pill { display: inline-flex; } }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); box-shadow: 0 0 0 1.5px var(--ink) inset; }
-.pill[data-tone="ready"] .dot { background: var(--lichen); }
-.pill[data-tone="busy"] .dot { background: var(--sea); }
-.pill[data-tone="error"] .dot { background: var(--copper); }
+.pill[data-tone="ready"] .dot { background: var(--answer); }
+.pill[data-tone="busy"] .dot { background: var(--fact); }
+.pill[data-tone="error"] .dot { background: var(--question); }

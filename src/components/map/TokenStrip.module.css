@@ -3,8 +3,8 @@
 .tokens { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 10px; list-style: none; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); max-height: 220px; overflow-y: auto; }
 .tokens li { font: 0.74rem/1 var(--font-mono); padding: 4px 6px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line); }
 .tokens .special { color: var(--text-2); border-style: dashed; background: transparent; }
-.tokens .ent { background: var(--sea); border-color: var(--ink); color: #17252a; font-weight: 600; }
-.written { background: rgb(216 243 106 / 0.12); }
+.tokens .ent { background: var(--fact); border-color: var(--ink); color: var(--bg); font-weight: 600; }
+.written { background: rgb(238 90 64 / 0.12); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 0.8rem; color: var(--text-2); }
 .legend code { font: 600 0.74rem/1 var(--font-mono); color: var(--ink); }
 .note { margin: 0; font-size: 0.8rem; color: var(--text-2); }

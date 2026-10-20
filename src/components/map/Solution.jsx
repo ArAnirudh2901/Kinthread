@@ -99,7 +99,7 @@ export default function Solution({ run, tentative, progress, player }) {
         {rows.map((row, k) => (
           <li key={row.key} data-state={state(k)} data-tone={row.tone}>
             <button type="button" className={s.row} onClick={() => go(k)} aria-current={k === current ? 'step' : undefined}>
-              <span className={s.badge} aria-hidden="true">{row.badge}</span>
+              <span className={s.badge} aria-hidden="true">{row.tone === 'answer' ? <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> : row.badge}</span>
               <span className={s.body}>{row.body}</span>
             </button>
           </li>

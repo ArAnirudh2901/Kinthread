@@ -42,9 +42,9 @@ device; there is no server, account or API key.
    As soon as both blanks are filled, it solves.
 3. **See how they're related.** The map rebuilds as a family tree, with parents above and children below, and plays
    the reasoning one step at a time:
-   - **copper** for the question: a dashed arrow with a "?";
-   - **teal** for facts from the story, numbered in reasoning order, each quoted from the sentence it came from;
-   - **lime** for the answer, the arrow that replaces the question.
+   - **indigo** for the question: a dashed arrow with a "?";
+   - **gold** for facts from the story, numbered in reasoning order, each quoted from the sentence it came from;
+   - **red** for the answer: the red thread that replaces the question.
 
    People are drawn as in biology pedigree charts: squares are male, circles female, and a diamond means the story
    never says. A caption narrates each step ("So Helen is Victor's father's wife, which makes Helen Victor's mother"),

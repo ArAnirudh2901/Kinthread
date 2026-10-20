@@ -1,11 +1,11 @@
 .caption { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border-left: 3px solid var(--line-strong); min-height: 64px; }
-.caption[data-tone="question"] { border-left-color: var(--copper); }
-.caption[data-tone="fact"] { border-left-color: var(--sea-ink); }
-.caption[data-tone="answer"] { border-left-color: var(--lichen); }
+.caption[data-tone="question"] { border-left-color: var(--question); }
+.caption[data-tone="fact"] { border-left-color: var(--fact-ink); }
+.caption[data-tone="answer"] { border-left-color: var(--answer); }
 .badge { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 700 0.8rem/1 var(--font-mono); border: 2px solid var(--line-strong); }
-.caption[data-tone="question"] .badge { border-color: var(--copper); border-style: dashed; color: var(--copper-ink); }
-.caption[data-tone="fact"] .badge { background: var(--sea-ink); border-color: var(--sea-ink); color: var(--bg); }
-.caption[data-tone="answer"] .badge { background: var(--lichen); border-color: var(--lichen); color: #17252a; }
+.caption[data-tone="question"] .badge { border-color: var(--question); border-style: dashed; color: var(--question-ink); }
+.caption[data-tone="fact"] .badge { background: var(--fact-ink); border-color: var(--fact-ink); color: var(--bg); }
+.caption[data-tone="answer"] .badge { background: var(--answer-fill); border-color: var(--answer); color: var(--on-answer); }
 .text { display: grid; gap: 2px; min-width: 0; }
 .label { font: 600 0.66rem/1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
 .main { font-size: 1.02rem; font-weight: 550; line-height: 1.4; }

@@ -58,7 +58,6 @@ export default function PipelineDiagram() {
     <ol ref={root} className={s.pipeline}>
       {STAGES.map((st, i) => (
         <li key={st.n} className={s.stage}>
-          <p className={s.n}>{st.n}</p>
           <h3 className={s.title}>{st.title}</h3>
           <div className={s.visual}><Visual i={i} /></div>
           <p className={s.model}>{st.model}</p>
