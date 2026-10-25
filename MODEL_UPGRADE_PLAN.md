@@ -9,7 +9,8 @@ copy head, optional prefix-LM mask, sub-word vocab 28,836) with grammar-constrai
 pure Python) -> exam layer (vote, conventions, options) + answer-time boosters chosen by `FINAL.json`.
 Rule: fp32, no quantization, no distillation; runs on the user's device (privacy, free hosting).
 
-## Recommended route: everything in the browser
+## Route: download once, run on the user's device
+Cloudflare Pages only serves the files (weights in < 25 MiB parts, cached in the browser); no server runs the model.
 Pyodide runs the pure-Python `kinlogic` unchanged (no logic port, no drift); the reader's forward pass runs in our own
 WASM (extend `engine.c`); Python drives the beam and calls WASM per step.
 
@@ -48,11 +49,6 @@ WASM (extend `engine.c`); Python drives the beam and calls WASM per step.
 3. Sync `vendor/kinship/` from the model repo export, update SHA manifest, `npm run build`, check `_headers`
    (COOP/COEP for SharedArrayBuffer), deploy with wrangler to classic Pages `kinthread.pages.dev` (only after
    `wrangler whoami` shows the owner's account).
-
-## Fallback route: hosted API
-FastAPI container running the Python pipeline (CPU fine: 39.5M fp32), the Pages site calls it. Hosts: Hugging Face
-Space (free CPU, needs owner's account/token) or Cloudflare Containers (paid). Weights from the model repo; R2 needs
-billing enabled. Simpler and faster to ship, but needs a server and sends questions off-device.
 
 ## Order and effort
 Phase 1 (0.5 day) -> Phase 2 (2-3 days, biggest risk) -> Phase 3 (1-2 days) -> Phase 4 (1 day) -> Phase 5 (1 day).
