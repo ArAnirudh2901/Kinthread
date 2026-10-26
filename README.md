@@ -10,6 +10,11 @@ The AI behind it was written and trained from scratch: a 13M-parameter transform
 and a 5.1M-parameter model that finds names. Both run **entirely in your browser**. Your story never leaves your
 device; there is no server, account or API key.
 
+The active website release is still the v8 model. The selected v10-r8p checkpoint is not yet connected to the full
+browser answer pipeline. Returning browsers check a release manifest and can update their cached model from the site;
+the site verifies model-file hashes before using a release. See [the migration plan](MODEL_UPGRADE_PLAN.md) for the
+release gate and current verification status.
+
 <p align="center">
   <img src="docs/map-dark.png" alt="Worked answer: Victor's father George, George's wife Helen, Helen's daughter Rose, so Rose is Victor's sister" width="49%">
   <img src="docs/map-exam-light.png" alt="Exam question: A is the brother of B, C is the father of A, so C is B's father" width="49%">
@@ -111,6 +116,10 @@ runtime (17 files, 59 MB), so a clone works offline with nothing to download. `b
 automatically before `dev` and `build`, checks every file's size and SHA-256 against `vendor/kinship/manifest.json`
 and stops with instructions if anything differs. `.gitattributes` marks the folder binary, so git never changes a
 byte (no line-ending conversion, on any OS). Don't use Git LFS for this folder.
+
+At runtime, the app compares a no-cache release manifest with its embedded release identity. A returning browser can
+update from an in-app notice; cached and downloaded model parts are checked by size and SHA-256. The previous model
+cache is removed only after the replacement initializes and is fully cached.
 
 Maintainers with the model project ([LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch)) checked
 out at `../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (or `KINSHIP_SRC`) sync from it instead; a changed

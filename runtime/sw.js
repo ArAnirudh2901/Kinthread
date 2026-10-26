@@ -18,6 +18,10 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/m/')) return;
+  if (url.pathname === '/model-release.json') {
+    e.respondWith(fetch(req, { cache: 'no-store' }));
+    return;
+  }
   // pages and route payloads (not content-hashed): network first so a new deploy shows at once; cached copy offline
   if (req.mode === 'navigate' || url.pathname.endsWith('.txt')) {
     e.respondWith(fetch(req).catch(async () =>

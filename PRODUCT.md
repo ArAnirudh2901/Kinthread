@@ -24,6 +24,10 @@ shown, not hidden, and fixed kinship rules re-check it.
 Used beside homework or exam practice, on phones and laptops. First visit downloads the model once (61 MB; a window asks first and
 shows progress), then it works offline.
 
+On later visits, the site checks the published model release. If a newer release is available, returning users see an
+in-app update action; the old cached model is replaced only after the new model verifies and initializes. This is a
+next-visit website notice, not an account-based or push notification.
+
 ## Capabilities and Constraints
 - English stories with named people, third person, up to about 280 words; 18 relationships; best on 2–4 step chains.
 - Exam input: the question ("How is C related to B?", "What is C to B?", "C is related to B as?") is detected and

@@ -1,6 +1,8 @@
 // Main-thread side of the inference worker. One worker per page lifetime, shared by every component
 // (module singleton: survives React StrictMode double mounts and client-side route changes).
 import { RUNTIME } from '../runtime.generated';
+import { deviceProfile } from './device-profile';
+import { verifyPublishedRelease } from './release';
 
 const BOOT_TIMEOUT = 12000;   // worker script never started: blocked or failed to load
 const QUIET_TIMEOUT = 20000;  // no progress for this long: tell the user, keep waiting
@@ -16,6 +18,9 @@ const initial = Object.freeze({
   isolated: null,
   info: null,                // ready message: engine, threads, loadMs, offline, maxTokens ...
   error: null,               // { code, message }
+  updateAvailable: false,
+  releaseMismatch: false,
+  releaseCheckError: null,
 });
 
 let state = initial;
@@ -28,9 +33,10 @@ let bootTimer = 0;
 let quietTimer = 0;
 let readyWaiters = [];
 let autoRepaired = false;
+let releaseCheck = null;
 
 function set(patch) {
-  state = { ...state, ...patch };
+  state = { ...state, ...patch, updateAvailable: modelUpdateAvailable() };
   for (const l of listeners) l();
 }
 
@@ -90,7 +96,9 @@ function onMessage({ data: m }) {
   }
   if (m.type === 'ready') {
     clearTimeout(quietTimer);
-    try { localStorage.setItem(SEEN, RUNTIME.model.base); } catch { /* storage blocked: asks again next time */ }
+    if (m.installed) {
+      try { localStorage.setItem(SEEN, RUNTIME.release.releaseId); } catch { /* storage blocked: asks again next time */ }
+    }
     set({ status: 'ready', stage: null, info: m, slow: false, error: null, loaded: state.total });
     settleReady();
     return;
@@ -121,7 +129,36 @@ const SEEN = 'kinthread-model';
 /** True when this device already finished loading this model version (it starts quietly); otherwise the visitor is asked first. */
 export function modelOnDevice() {
   if (typeof window === 'undefined') return false;
-  try { return localStorage.getItem(SEEN) === RUNTIME.model.base; } catch { return false; }
+  try {
+    const installed = localStorage.getItem(SEEN);
+    return installed === RUNTIME.release.releaseId || installed === RUNTIME.model.base;
+  } catch { return false; }
+}
+
+/** A previously installed model with a different release identity should be offered an update. */
+export function modelUpdateAvailable() {
+  if (typeof window === 'undefined') return false;
+  try {
+    const installed = localStorage.getItem(SEEN);
+    return !!installed && installed !== RUNTIME.release.releaseId && installed !== RUNTIME.model.base;
+  } catch { return false; }
+}
+
+/** Refreshes the browser-profile release flag after client hydration. */
+export function refreshModelState() { set({}); }
+
+/** Check the no-cache release manifest as soon as the app loads, before any model assets are requested. */
+export function checkReleaseOnPageLoad() {
+  releaseCheck ??= verifyPublishedRelease().catch((error) => ({ checkError: error }));
+  return releaseCheck.then((result) => {
+    if (result?.checkError) {
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      set({ releaseMismatch: false, releaseCheckError: offline ? null : result.checkError.message });
+      return offline ? true : result;
+    }
+    set({ releaseMismatch: result === false, releaseCheckError: null });
+    return result;
+  });
 }
 
 /** Starts the worker and model download once. Later calls do nothing while it is loading or ready. */
@@ -132,29 +169,42 @@ export function startModel(options = {}) {
   const missing = capability();
   if (missing) return set({ status: 'error', error: { code: 'unsupported', message: missing } });
   set({ ...initial, status: 'starting', stage: 'runtime' });
-  try {
-    worker = new Worker(`${RUNTIME.runtime}worker.js`, { type: 'module', name: 'kinthread' });
-  } catch (e) {
-    return fail('unsupported', `This browser cannot start module workers (${e.message}).`);
-  }
-  worker.onmessage = onMessage;
-  worker.onerror = (e) => {
-    e.preventDefault?.();
-    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-    if (state.status === 'ready') fail('crashed', e.message || 'The model runtime stopped unexpectedly.');
-    else fail(offline ? 'network' : 'runtime', e.message || 'The model runtime could not start.');
-  };
-  worker.onmessageerror = () => fail('runtime', 'The model runtime sent a message this page could not read.');
-  bootTimer = setTimeout(() => fail(navigator.onLine === false ? 'network' : 'runtime',
-    'The model runtime did not start. A browser extension or network filter may be blocking it.'), BOOT_TIMEOUT);
-  armQuiet();
-  worker.postMessage({ type: 'init', model: RUNTIME.model, engine: options.engine || 'auto', repair: !!options.repair, maxThreads: 4 });
+  checkReleaseOnPageLoad().then((matches) => {
+    if (matches?.checkError) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) matches = true;
+      else return fail('release-check', `The published model version could not be checked. ${matches.checkError.message}`);
+    }
+    if (!matches) return fail('release-mismatch', 'A different model release is published than this page expects. Reload the page before downloading or using model files.');
+    try {
+      worker = new Worker(`${RUNTIME.runtime}worker.js`, { type: 'module', name: 'kinthread' });
+    } catch (e) {
+      return fail('unsupported', `This browser cannot start module workers (${e.message}).`);
+    }
+    worker.onmessage = onMessage;
+    worker.onerror = (e) => {
+      e.preventDefault?.();
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (state.status === 'ready') fail('crashed', e.message || 'The model runtime stopped unexpectedly.');
+      else fail(offline ? 'network' : 'runtime', e.message || 'The model runtime could not start.');
+    };
+    worker.onmessageerror = () => fail('runtime', 'The model runtime sent a message this page could not read.');
+    bootTimer = setTimeout(() => fail(navigator.onLine === false ? 'network' : 'runtime',
+      'The model runtime did not start. A browser extension or network filter may be blocking it.'), BOOT_TIMEOUT);
+    armQuiet();
+    const profile = deviceProfile();
+    worker.postMessage({
+      type: 'init', model: RUNTIME.model, engine: options.engine || profile.engine,
+      repair: !!options.repair, maxThreads: profile.maxThreads, maxDownloads: profile.maxDownloads,
+      deviceTier: profile.tier,
+    });
+  });
 }
 
 /** Restarts from scratch. repair: re-download model files; engine 'single': skip threads (less memory). */
 export function retryModel(options = {}) {
   worker?.terminate();
   worker = null;
+  releaseCheck = null;
   startModel({ ...lastOptions, ...options });
 }
 

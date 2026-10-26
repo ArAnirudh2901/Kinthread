@@ -1,5 +1,6 @@
 'use client';
 import { useSyncExternalStore } from 'react';
+import { deviceProfile } from './model/device-profile';
 
 // 'none' when the user asks for reduced motion; 'lite' on low-end or data-saving devices; else 'full'.
 const query = () => matchMedia('(prefers-reduced-motion: reduce)');
@@ -12,9 +13,7 @@ function subscribe(cb) {
 
 function getMode() {
   if (query().matches) return 'none';
-  const n = navigator;
-  const low = (n.hardwareConcurrency || 8) <= 2 || (n.deviceMemory || 8) <= 2 || n.connection?.saveData === true;
-  return low ? 'lite' : 'full';
+  return deviceProfile().tier === 'low' ? 'lite' : 'full';
 }
 
 export function useMotionMode() {

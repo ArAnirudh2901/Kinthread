@@ -155,6 +155,10 @@ feedback; hover styles only apply with a fine pointer.
 Names found in the story; the chosen ones get a white-chalk ring.
 ### Cards / Containers
 The map sheet: board surface with a faint dotted grid (the loom).
+### Model update notice
+The returning-user update notice stays in the normal workbench flow as a tone-step surface, not a new modal system.
+Use sentence-case copy, the existing yellow-chalk primary pill for “Update model,” and the site's normal visible focus
+ring. Keep text and action stacked at narrow widths and use the existing theme tokens in both dark and light modes.
 
 ## Do's and Don'ts
 - Do keep motion calm: entrances once, then rest. The hero spin decays and the render loop sleeps.

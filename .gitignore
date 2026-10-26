@@ -43,6 +43,7 @@ next-env.d.ts
 # generated from the LLM repo by scripts/sync-runtime.mjs (model weights are not committed)
 /public/r/
 /public/m/
+/public/model-release.json
 /src/lib/runtime.generated.js
 /.wrangler/
 /tools/bench-results.jsonl

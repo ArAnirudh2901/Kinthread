@@ -1,9 +1,18 @@
 {
   "note": "SHA-256 of every file in this folder; checked by scripts/sync-runtime.mjs",
+  "release": {
+    "releaseId": "v8",
+    "checkpoint": "runs/clutrr-qa-v8/best.pt",
+    "checkpointSha256": "1e7c9eeb4325d328aad6b97ad9c7532fda77e713eeb7a303d34600cfe46ecc3e"
+  },
   "files": {
     "kinship.js": {
       "bytes": 23410,
       "sha256": "888a06dcb423fd63ee081f9a77935fb00a040dbacb7363b24853b6619e36df67"
+    },
+    "file-integrity.js": {
+      "bytes": 186,
+      "sha256": "eb5baea7cff84e48e27e13a9aca70578e414eb90338c5b25506c085c0f9ce3ad"
     },
     "engine-mt.mjs": {
       "bytes": 20645,

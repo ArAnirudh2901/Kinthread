@@ -34,6 +34,15 @@ export default function Workbench() {
   // returning visitors start at once; a first visit asks first (ModelGate)
   useEffect(() => { if (modelOnDevice()) startModel(); }, []);
 
+  // A release notice on another route sends the visitor here and opens the existing model download flow.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('updateModel') !== '1') return;
+    url.searchParams.delete('updateModel');
+    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    requestModel(document.querySelector('[data-solve]'));
+  }, []);
+
   // the hero's "Try an example" button
   useEffect(() => {
     const onExample = (e) => {

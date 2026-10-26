@@ -121,7 +121,9 @@ export default function ModelGate() {
                 <h2 className={w.title}>The model couldn&rsquo;t load.</h2>
                 <p className={w.text}>{model.error?.message || 'Check the connection and try again.'}</p>
                 <div className={w.actions}>
-                  <button type="button" className={w.primary} onClick={() => retryModel()}>Try again</button>
+                  {model.error?.code === 'release-mismatch'
+                    ? <button type="button" className={w.primary} onClick={() => window.location.reload()}>Reload page</button>
+                    : <button type="button" className={w.primary} onClick={() => retryModel()}>Try again</button>}
                   <button type="button" className={w.quiet} onClick={close}>Close</button>
                 </div>
               </>

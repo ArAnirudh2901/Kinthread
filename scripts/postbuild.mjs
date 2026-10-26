@@ -76,6 +76,9 @@ const headers = `/*
 /m/*
   Cache-Control: public, max-age=31536000, immutable
 
+/model-release.json
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /sw.js
   Cache-Control: no-cache
 `;

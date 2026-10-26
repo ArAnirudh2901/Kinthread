@@ -22,7 +22,7 @@ export default function SiteFooter() {
           <a href={SOURCE_URL} rel="noopener noreferrer">Source on GitHub</a>
         </nav>
         <p className={`mono ${s.version}`}>
-          model {RUNTIME.model.version.slice(0, 8)} &middot; runtime {RUNTIME.runtime.split('/')[2].slice(0, 8)}
+          model {RUNTIME.release.releaseId} &middot; runtime {RUNTIME.runtime.split('/')[2].slice(0, 8)}
         </p>
       </div>
     </footer>

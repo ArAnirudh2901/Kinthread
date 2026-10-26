@@ -9,6 +9,7 @@
 //                                                    {type:'fatal', code, message}
 //                                                    {type:'names'|'result'|'error', id, ...}
 import { KinshipQA, bestEngine, bracketNames } from './kinship.js';
+import { verifyFileBytes } from './file-integrity.js';
 
 const CACHE_PREFIX = 'kinship-model-';
 let qa = null;
@@ -159,12 +160,12 @@ async function getFile(f, ctx) {
     const hit = await ctx.cache.match(url).catch(() => null);
     if (hit) {
       const buf = new Uint8Array(await hit.arrayBuffer());
-      if (buf.length === f.bytes) { ctx.progress(buf.length, false); return buf; }
+      if (await verifyFileBytes(buf, f, sha256)) { ctx.progress(buf.length, false); return buf; }
+      await ctx.cache.delete(url).catch(() => {});
     }
   }
   const buf = await download(url, f.bytes, ctx);
-  const sum = await sha256(buf);
-  if (sum && sum !== f.sha256) throw new LoadError('integrity', `${f.file} arrived damaged (checksum mismatch).`);
+  if (!(await verifyFileBytes(buf, f, sha256))) throw new LoadError('integrity', `${f.file} arrived damaged (size or checksum mismatch).`);
   if (ctx.cache) {
     ctx.puts.push(ctx.cache.put(url, new Response(buf, { headers: { 'content-type': 'application/octet-stream' } }))
       .catch(() => { ctx.cacheFailed = true; }));
@@ -199,17 +200,20 @@ async function route(name, ctx) {
   catch (e) { ctx.error ??= e; throw e; }
 }
 
-async function init({ model, engine = 'auto', repair = false, maxThreads = 4 }) {
+async function init({ model, engine = 'auto', repair = false, maxThreads = 4, maxDownloads = 3, deviceTier = 'high' }) {
   if (qa) return post(qa.readyMsg);
   if (starting) return;
   starting = true;
   const t0 = performance.now();
-  const ctx = { model, repair, cache: null, limit: limiter(3), puts: [], error: null, streamsDone: 0, cacheFailed: false };
+  const ctx = { model, repair, cache: null, limit: limiter(Math.max(1, Math.min(3, maxDownloads))), puts: [], error: null, streamsDone: 0, cacheFailed: false };
   try {
     if (typeof WebAssembly !== 'object') throw new LoadError('unsupported', 'WebAssembly is not available in this browser.');
+    if (!globalThis.crypto?.subtle) throw new LoadError('unsupported', 'Secure SHA-256 verification is not available in this browser.');
     const gunzip = await ensureGunzip();
-    if (repair) await dropCache(model.version);
-    ctx.cache = await openCache(model.version);
+    const cacheKey = model.contentHash;
+    if (!cacheKey) throw new LoadError('integrity', 'The release has no content hash for its model cache.');
+    if (repair) await dropCache(cacheKey);
+    ctx.cache = await openCache(cacheKey);
     const restored = !!ctx.cache && !repair && await isCached(model, ctx.cache);
     post({ type: 'progress', stage: restored ? 'restore' : 'download', loaded: 0, total: model.totalBytes, restored });
     ctx.progress = tracker(model.totalBytes);
@@ -217,17 +221,17 @@ async function init({ model, engine = 'auto', repair = false, maxThreads = 4 }) 
     qa = await KinshipQA.load({ base: '', fetchFn: (name) => route(name, ctx), engine: kind, maxThreads });
     await Promise.allSettled(ctx.puts);
     const offline = !!ctx.cache && !ctx.cacheFailed && await isCached(model, ctx.cache);
-    dropOldCaches(model.version);
+    if (offline) await dropOldCaches(cacheKey);
     qa.readyMsg = {
       type: 'ready', engine: qa.engine, threads: qa.threads, tile: qa.tile, gunzip, restored, offline,
-      loadMs: performance.now() - t0, maxTokens: qa.qa.cfg.block_size - 16,
+      installed: offline, loadMs: performance.now() - t0, maxTokens: qa.qa.cfg.block_size - 16, deviceTier,
     };
     post(qa.readyMsg);
   } catch (e) {
     qa = null;
     const err = ctx.error && classify(e) !== 'memory' ? ctx.error : e;
     const code = classify(err);
-    if (code === 'integrity') await dropCache(model.version);   // only this model's files; next try downloads fresh
+    if (code === 'integrity') await dropCache(model.contentHash);   // only this model's files; next try downloads fresh
     post({ type: 'fatal', code, message: String(err?.message || err) });
   } finally {
     starting = false;
