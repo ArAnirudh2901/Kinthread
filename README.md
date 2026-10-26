@@ -6,14 +6,17 @@ Kinthread reads a short family story, or a textbook question like *"A is the bro
 is C related to B?"*, and works out how two people are related. It shows the working the way you would write it on
 paper: one fact at a time, drawn as a family tree, ending in the answer.
 
-The AI behind it was written and trained from scratch: a 13M-parameter transformer that reasons about relationships
-and a 5.1M-parameter model that finds names. Both run **entirely in your browser**. Your story never leaves your
-device; there is no server, account or API key.
+Production currently uses the v8, 13M-parameter relation model and its 5.1M name finder. Both run **entirely in your
+browser**. Your story never leaves your device; there is no inference server, account or API key. This checkout also
+contains an in-progress v10-r8p browser candidate; it is not production-ready yet.
 
-The active website release is still the v8 model. The selected v10-r8p checkpoint is not yet connected to the full
-browser answer pipeline. Returning browsers check a release manifest and can update their cached model from the site;
-the site verifies model-file hashes before using a release. See [the migration plan](MODEL_UPGRADE_PLAN.md) for the
-release gate and current verification status.
+The active Cloudflare Pages deployment is still v8. The v10-r8p candidate now passes a three-link browser answer
+smoke check in Chrome on local runtime `f608eed15e9b`: the expected “paternal cousin” was shown as a tentative
+`assumed` result (uncalibrated score 0.95) in 9.6 seconds on this device, using two WebAssembly threads. This is one
+question, not broad parity or an accuracy estimate. The Node/Pyodide integration regression also passes. The locked
+test remains 68.8% fair / 72.2% verified, below the 85% target; keep v8 in production until broad parity, accuracy,
+calibration, and device-performance gates pass. See [the migration plan](MODEL_UPGRADE_PLAN.md).
+See [the migration plan](MODEL_UPGRADE_PLAN.md) for Cloudflare behavior and release gates.
 
 <p align="center">
   <img src="docs/map-dark.png" alt="Worked answer: Victor's father George, George's wife Helen, Helen's daughter Rose, so Rose is Victor's sister" width="49%">
@@ -111,15 +114,16 @@ bun run dev          # http://localhost:3000
 
 ### Model files
 
-The final trained model is included: `vendor/kinship/` holds the weights, model settings and the WebAssembly
-runtime (17 files, 59 MB), so a clone works offline with nothing to download. `bun run sync`, which runs
+`vendor/kinship/` holds the current v8 runtime/model plus the selected v10-r8p export and browser runtime. `bun run sync`, which runs
 automatically before `dev` and `build`, checks every file's size and SHA-256 against `vendor/kinship/manifest.json`
-and stops with instructions if anything differs. `.gitattributes` marks the folder binary, so git never changes a
-byte (no line-ending conversion, on any OS). Don't use Git LFS for this folder.
+and stops if anything differs. `.gitattributes` marks the folder binary, so git never changes a byte (no line-ending
+conversion, on any OS). Don't use Git LFS for this folder.
 
-At runtime, the app compares a no-cache release manifest with its embedded release identity. A returning browser can
-update from an in-app notice; cached and downloaded model parts are checked by size and SHA-256. The previous model
-cache is removed only after the replacement initializes and is fully cached.
+At runtime, the app reads the no-cache `/model-release.json` from the active Pages deployment. The manifest includes
+the human release ID, model descriptor, and content-hashed worker/model paths. A returning browser can download a
+newer compatible release in place; cached and downloaded model files are checked by size and SHA-256. The previous
+model cache is removed only after the replacement initializes and is fully cached. A build now fails if the release
+manifest is missing from the Cloudflare Pages export.
 
 Maintainers with the model project ([LLM-From-Scratch](https://github.com/ArAnirudh2901/LLM-From-Scratch)) checked
 out at `../../Generative_AI/LLM_from_Scratch/2_Training_Tiny_LLM` (or `KINSHIP_SRC`) sync from it instead; a changed

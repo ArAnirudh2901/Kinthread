@@ -103,8 +103,12 @@ function Tentative({ run, info, progress, player }) {
   return (
     <>
       <p className={s.lede}>
-        This is a best guess, not a sure answer: the model&rsquo;s reasoning paths disagree (only {score(run.result.share)} of
-        their weight ends on it, below the {RULES.minAgreement.toFixed(2)} it needs to be confident).
+        {info?.arch === 'v10'
+          ? run.result.status === 'unique'
+            ? <>This is a best guess, not a sure answer: v10 returned a confidence score of {score(run.result.confidence)}, below the {0.7.toFixed(2)} display threshold. Its browser confidence has not been calibrated.</>
+            : <>This is a best guess, not a sure answer: v10 did not establish a unique answer (solver status: {run.result.status || 'unknown'}). Its reported score is {score(run.result.confidence)} and has not been calibrated in the browser.</>
+          : <>This is a best guess, not a sure answer: the model&rsquo;s reasoning paths disagree (only {score(run.result.share)} of
+            their weight ends on it, below the {RULES.minAgreement.toFixed(2)} it needs to be confident).</>}
       </p>
       <Solution run={run} tentative progress={progress} player={player} />
       <p className={s.tip}>Short, direct sentences such as &ldquo;Ashley&rsquo;s daughter Lillian&rdquo; usually help it decide.</p>

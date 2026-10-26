@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { gsap, prefersReducedMotion, useGSAP } from '@/lib/gsap';
 import { prepare, splitQuestion } from '@/lib/exam';
 import { askModel } from '@/lib/model/client';
+import { linkRelationsFromFacts } from '@/lib/model/link-relations';
 import { buildPath, mentionLinks } from '@/lib/story';
 import ModelError from './ModelError';
 import ModelLoading from './ModelLoading';
@@ -58,7 +59,7 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
   const [relations, setRelations] = useState({ key: '', map: {} });
   const relKey = `${story}\u0001${linkKey}`;
   useEffect(() => {
-    if (!ready || !links.length) return;
+    if (!ready || !links.length || model.info?.arch === 'v10') return;
     let live = true;
     (async () => {
       const p = prepare(story), map = {};
@@ -79,8 +80,10 @@ export default function MapPanel({ model, state, words, maxTokens, onRetryTrace,
       if (live) setRelations({ key: relKey, map });
     })();
     return () => { live = false; };
-  }, [ready, relKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  const linkRelations = relations.key === relKey ? relations.map : {};
+  }, [ready, relKey, model.info?.arch]); // eslint-disable-line react-hooks/exhaustive-deps
+  const linkRelations = model.info?.arch === 'v10'
+    ? linkRelationsFromFacts(links, shown?.result?.factEdges, splitQuestion(story).story)
+    : relations.key === relKey ? relations.map : {};
 
   let key, body;
   if (run?.status === 'error') { key = `trace-error-${run.id}`; body = <TraceError error={run.error} onRetry={onRetryTrace} />; }

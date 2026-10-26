@@ -19,6 +19,7 @@ const initial = Object.freeze({
   info: null,                // ready message: engine, threads, loadMs, offline, maxTokens ...
   error: null,               // { code, message }
   updateAvailable: false,
+  latestReleaseId: RUNTIME.release.releaseId,
   releaseMismatch: false,
   releaseCheckError: null,
 });
@@ -34,6 +35,8 @@ let quietTimer = 0;
 let readyWaiters = [];
 let autoRepaired = false;
 let releaseCheck = null;
+let publishedRelease = null;
+let activeRelease = null;
 
 function set(patch) {
   state = { ...state, ...patch, updateAvailable: modelUpdateAvailable() };
@@ -97,7 +100,7 @@ function onMessage({ data: m }) {
   if (m.type === 'ready') {
     clearTimeout(quietTimer);
     if (m.installed) {
-      try { localStorage.setItem(SEEN, RUNTIME.release.releaseId); } catch { /* storage blocked: asks again next time */ }
+      try { localStorage.setItem(SEEN, activeRelease?.releaseId || RUNTIME.release.releaseId); } catch { /* storage blocked: asks again next time */ }
     }
     set({ status: 'ready', stage: null, info: m, slow: false, error: null, loaded: state.total });
     settleReady();
@@ -131,7 +134,8 @@ export function modelOnDevice() {
   if (typeof window === 'undefined') return false;
   try {
     const installed = localStorage.getItem(SEEN);
-    return installed === RUNTIME.release.releaseId || installed === RUNTIME.model.base;
+    const latest = publishedRelease?.releaseId || RUNTIME.release.releaseId;
+    return installed === latest || (latest === RUNTIME.release.releaseId && installed === RUNTIME.model.base);
   } catch { return false; }
 }
 
@@ -140,7 +144,8 @@ export function modelUpdateAvailable() {
   if (typeof window === 'undefined') return false;
   try {
     const installed = localStorage.getItem(SEEN);
-    return !!installed && installed !== RUNTIME.release.releaseId && installed !== RUNTIME.model.base;
+    const latest = publishedRelease?.releaseId || RUNTIME.release.releaseId;
+    return !!installed && !modelOnDevice();
   } catch { return false; }
 }
 
@@ -154,9 +159,10 @@ export function checkReleaseOnPageLoad() {
     if (result?.checkError) {
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
       set({ releaseMismatch: false, releaseCheckError: offline ? null : result.checkError.message });
-      return offline ? true : result;
+      return offline ? (publishedRelease || RUNTIME.release) : result;
     }
-    set({ releaseMismatch: result === false, releaseCheckError: null });
+    publishedRelease = result;
+    set({ releaseMismatch: false, releaseCheckError: null, latestReleaseId: result.releaseId });
     return result;
   });
 }
@@ -164,19 +170,27 @@ export function checkReleaseOnPageLoad() {
 /** Starts the worker and model download once. Later calls do nothing while it is loading or ready. */
 export function startModel(options = {}) {
   if (typeof window === 'undefined') return;
-  if (worker && state.status !== 'error') return;
+  if (worker && state.status !== 'error' && !options.update) return;
+  if (options.update) {
+    worker?.terminate();
+    worker = null;
+    releaseCheck = null;
+  }
   lastOptions = options;
   const missing = capability();
   if (missing) return set({ status: 'error', error: { code: 'unsupported', message: missing } });
   set({ ...initial, status: 'starting', stage: 'runtime' });
-  checkReleaseOnPageLoad().then((matches) => {
-    if (matches?.checkError) {
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) matches = true;
-      else return fail('release-check', `The published model version could not be checked. ${matches.checkError.message}`);
+  checkReleaseOnPageLoad().then((release) => {
+    if (release?.checkError) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) release = RUNTIME.release;
+      else return fail('release-check', `The latest model version could not be checked. ${release.checkError.message}`);
     }
-    if (!matches) return fail('release-mismatch', 'A different model release is published than this page expects. Reload the page before downloading or using model files.');
+    activeRelease = release || RUNTIME.release;
+    const model = activeRelease.model || RUNTIME.model;
+    if (!model?.files || !activeRelease.runtime) return fail('release-check', 'The latest model release is missing its download details.');
+    set({ total: model.totalBytes });
     try {
-      worker = new Worker(`${RUNTIME.runtime}worker.js`, { type: 'module', name: 'kinthread' });
+      worker = new Worker(`${activeRelease.runtime}worker.js`, { type: 'module', name: 'kinthread' });
     } catch (e) {
       return fail('unsupported', `This browser cannot start module workers (${e.message}).`);
     }
@@ -193,7 +207,7 @@ export function startModel(options = {}) {
     armQuiet();
     const profile = deviceProfile();
     worker.postMessage({
-      type: 'init', model: RUNTIME.model, engine: options.engine || profile.engine,
+      type: 'init', model, engine: options.engine || profile.engine,
       repair: !!options.repair, maxThreads: profile.maxThreads, maxDownloads: profile.maxDownloads,
       deviceTier: profile.tier,
     });

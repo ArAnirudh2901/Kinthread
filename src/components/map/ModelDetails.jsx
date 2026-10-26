@@ -8,7 +8,11 @@ const pct = (x) => `${(100 * x).toFixed(1)}%`;
 
 export default function ModelDetails({ run, info }) {
   const r = run.result;
-  const decided = r.kind === 'answer' ? `agreement ≥ ${RULES.minAgreement.toFixed(2)} and p(unknown) < ${RULES.unknownThreshold.toFixed(2)}`
+  const v10 = info?.arch === 'v10';
+  const decided = v10
+    ? r.status === 'unique' && r.confidence >= 0.7 ? 'unique answer; confidence ≥ 0.70'
+      : r.status === 'unique' ? 'unique answer; confidence below 0.70' : `pipeline status: ${r.status || r.kind}`
+    : r.kind === 'answer' ? `agreement ≥ ${RULES.minAgreement.toFixed(2)} and p(unknown) < ${RULES.unknownThreshold.toFixed(2)}`
     : r.kind === 'not sure' ? `agreement below ${RULES.minAgreement.toFixed(2)}`
       : `p(unknown) ≥ ${RULES.unknownThreshold.toFixed(2)}`;
   const v = CALIBRATION.val, t = CALIBRATION.test;
@@ -21,6 +25,10 @@ export default function ModelDetails({ run, info }) {
       <div className={s.inner}>
         <dl className={s.grid}>
           <div><dt>Result</dt><dd><code>{r.kind}</code><span>{decided}</span></dd></div>
+          {v10 ? <div>
+            <dt>Confidence</dt>
+            <dd><code>{score(r.confidence)}</code><span>v10 pipeline score; browser calibration has not been measured, so this is not a verified probability.</span></dd>
+          </div> : <>
           <div>
             <dt>Agreement</dt>
             <dd><code>{score(r.share)}</code><span>Share of the model&rsquo;s weighted reasoning paths that end in this answer. Not a probability that it is correct.</span></dd>
@@ -29,15 +37,23 @@ export default function ModelDetails({ run, info }) {
             <dt>p(unknown)</dt>
             <dd><code>{score(r.pUnknown)}</code><span>The larger of p(no path) {score(r.pStart)} and 1 &minus; p(verified steps) {score(1 - r.pLink)}.</span></dd>
           </div>
+          </>}
           <div><dt>Inference</dt><dd><code>{ms(r.ms)}</code><span>model time on this device; {ms(run.roundTripMs)} including the hop to the worker</span></dd></div>
           <div><dt>Engine</dt><dd><code>{engineName(info)}</code><span>WebAssembly, exact 32-bit weights</span></dd></div>
-          <div><dt>Search</dt><dd><code>beam {RULES.beam}</code><span>{r.views} view, {r.rows} token rows computed</span></dd></div>
+          <div><dt>Search</dt><dd><code>beam {v10 ? (r.beam || info?.beam || '—') : RULES.beam}</code><span>{v10
+            ? `${r.decodeCalls} reader calls; ${r.forwardRows} forward rows across ${r.decodeSteps} decode steps`
+            : `${r.views} view, ${r.rows} token rows computed`}</span></dd></div>
+          {v10 && <div><dt>Time breakdown</dt><dd><code>decoder {ms(r.decoderMs)}</code><span>
+            prefill {ms(r.prefillMs)} · forward {ms(r.forwardMs)} · probabilities {ms(r.probabilityMs)} · Python/bridge {ms(r.pipelineMs)}
+          </span></dd></div>}
         </dl>
-        <p className={s.calib}>
+        {v10 ? <p className={s.calib}>
+          <strong>How often is it right?</strong> Browser calibration has not been measured for v10-r8p. The v8 results do not apply.
+        </p> : <p className={s.calib}>
           <strong>How often is it right?</strong> With these settings, on {v.questions} held-out stories needing {v.steps} steps,
           confident answers ({v.confident} of them) were correct {pct(v.confidentCorrect)} of the time and tentative guesses {pct(v.tentativeCorrect)}.
           On longer chains ({t.steps} steps): {pct(t.confidentCorrect)} and {pct(t.tentativeCorrect)}. Measured with the people given, not detected.
-        </p>
+        </p>}
         {run.trace && <TokenStrip trace={run.trace} result={r} />}
       </div>
     </details>

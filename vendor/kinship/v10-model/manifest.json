@@ -1,0 +1,340 @@
+{
+  "release": {
+    "releaseId": "v10-r8p",
+    "checkpoint": "runs/v10-r8p-final/best.pt",
+    "checkpointSha256": "38c289d351d6517b5cde1bc9fb64ea97bd33eee193639d6351edda52fdfd7a52"
+  },
+  "files": {
+    "reader.json": {
+      "bytes": 422137,
+      "sha256": "03555fb9554f483bf955fab530f5ffeec79dae39b3457fbf6b47fe5541c4821d"
+    },
+    "verifier.json": {
+      "bytes": 628,
+      "sha256": "34e5044de804a5955535efabbec6b9e78b55dbe2dd2797c566f2f491b19a9b29"
+    },
+    "FINAL.json": {
+      "bytes": 2566,
+      "sha256": "ea940c63d7b58de3413cb87fdca8643517ad526d3463b9a04716eb6a795e8a99"
+    },
+    "name_table.tsv.gz": {
+      "bytes": 527474,
+      "sha256": "41ab04ebe6a01f3f487c5cb13217133e9e1d27fb6f7d845e1a3936202488b3dd"
+    },
+    "kinlogic.zip": {
+      "bytes": 138777,
+      "sha256": "68ec7d3ed902a22c40d94a5e2b71444da36ce04b83aedb6be60f45562709b9c7"
+    }
+  },
+  "weights": {
+    "bytes": 126095971,
+    "sha256": "6e172ac8823907c8aba603a344bb6f7ee4dc8a095f924cf6cc774a9580411b26",
+    "parts": [
+      {
+        "file": "weights/reader.0.bin",
+        "bytes": 2097152,
+        "sha256": "912c9dd44e6e61a1544ac9de78af913ca5fff3bcf14eb12ef49440ae9686b251"
+      },
+      {
+        "file": "weights/reader.1.bin",
+        "bytes": 2097152,
+        "sha256": "c2b8e074dcea0399630b1ae9044d1c3b6833b571fd8d268c67b937ce34cdae99"
+      },
+      {
+        "file": "weights/reader.2.bin",
+        "bytes": 2097152,
+        "sha256": "11673feb9294754b01feed0cc2b7436afaa3ac12a5794c81d49f412a69268c08"
+      },
+      {
+        "file": "weights/reader.3.bin",
+        "bytes": 2097152,
+        "sha256": "fe4b57908ab2adc41a340bf65bfb55cbedca261e4c26b728d517850e1050f681"
+      },
+      {
+        "file": "weights/reader.4.bin",
+        "bytes": 2097152,
+        "sha256": "a9384e4c01282ad4bc73b87c8f4a09ecba3d6a6339bcb290998069ff486481a1"
+      },
+      {
+        "file": "weights/reader.5.bin",
+        "bytes": 2097152,
+        "sha256": "db1c6a2981d1738cdf0790659c22ddeaaee0af86c5c66b338493357fc9e5ce4c"
+      },
+      {
+        "file": "weights/reader.6.bin",
+        "bytes": 2097152,
+        "sha256": "1d4edac54617563b1a5222e337a193c1dfc4c0108b97cca5ece9a3c1fa956ff6"
+      },
+      {
+        "file": "weights/reader.7.bin",
+        "bytes": 2097152,
+        "sha256": "9a8c7e971ff6ef85fe389f50d5539397ac88f0b4261989c908195101168f7abe"
+      },
+      {
+        "file": "weights/reader.8.bin",
+        "bytes": 2097152,
+        "sha256": "1ccfd0db71f7b03b1d9dddc497042c59dcd8c2811b593518ea6a430d09f10cf6"
+      },
+      {
+        "file": "weights/reader.9.bin",
+        "bytes": 2097152,
+        "sha256": "25d2a04988f91d1ea400c00e17ba1886c111a1a65f4ae6c64314be8b9e8a72f2"
+      },
+      {
+        "file": "weights/reader.10.bin",
+        "bytes": 2097152,
+        "sha256": "7ff7982f2f4a0e0647fa81dbfc12a257ed9ca60b5963bc04940ad236fc7183bc"
+      },
+      {
+        "file": "weights/reader.11.bin",
+        "bytes": 2097152,
+        "sha256": "2ccbd436041ae0c5bc149f6c78f0a8add364cc27386dacc0b5dd3dfed79625e1"
+      },
+      {
+        "file": "weights/reader.12.bin",
+        "bytes": 2097152,
+        "sha256": "a9bfe078ad494a0050a6e6357586f025dfda3d0d247a1efc8f54d215c1812a6b"
+      },
+      {
+        "file": "weights/reader.13.bin",
+        "bytes": 2097152,
+        "sha256": "d99ecd362ea6f63056efd5f8ff347761e41d0b186101a049bf00c16bc02a385f"
+      },
+      {
+        "file": "weights/reader.14.bin",
+        "bytes": 2097152,
+        "sha256": "5f372a6272d52566f35c0d422f5a34c25ecf5ccd9dea96acd71b79bffc256c25"
+      },
+      {
+        "file": "weights/reader.15.bin",
+        "bytes": 2097152,
+        "sha256": "7c0b9c145d430f122f0bfcff46bb41399928fd0ce75f0ced6ced5cf009a496c9"
+      },
+      {
+        "file": "weights/reader.16.bin",
+        "bytes": 2097152,
+        "sha256": "9552f478f22876455f69d23da2af9d3f1e795042e8a87631a9c5d77c7490e8bd"
+      },
+      {
+        "file": "weights/reader.17.bin",
+        "bytes": 2097152,
+        "sha256": "a81c02c4ad28c44ff290c917790c63b58f627f7fff44b8bc8c5d3268fc9f64cc"
+      },
+      {
+        "file": "weights/reader.18.bin",
+        "bytes": 2097152,
+        "sha256": "04801a62ee9318a2f1f66e016cddf28e707594f53a3115801afd02e2737265a0"
+      },
+      {
+        "file": "weights/reader.19.bin",
+        "bytes": 2097152,
+        "sha256": "70857123395853b7a83410d9c44e42fd9c8e53e73b7fc1b1ecf77f06d63f4bd4"
+      },
+      {
+        "file": "weights/reader.20.bin",
+        "bytes": 2097152,
+        "sha256": "5a7e1dc297898030fee75a187eaa0aee2d6b83d5aac51b971fc84532f04abd31"
+      },
+      {
+        "file": "weights/reader.21.bin",
+        "bytes": 2097152,
+        "sha256": "895873699bff6e969054b544b506633c3ea2537e90224b4fad4d1a951da6f345"
+      },
+      {
+        "file": "weights/reader.22.bin",
+        "bytes": 2097152,
+        "sha256": "031a4862d4e5e92321df3ec263a18ede63f3db3d50fcda56fb6658b9dc5faecb"
+      },
+      {
+        "file": "weights/reader.23.bin",
+        "bytes": 2097152,
+        "sha256": "c08e8bc63411c7fd5aaa5c62d0823ca9902ede424413991f2816d6b27a72d99c"
+      },
+      {
+        "file": "weights/reader.24.bin",
+        "bytes": 2097152,
+        "sha256": "f42285b051411c29898e80c9c4e11a38a923bd29ca304fcdb96fa5a39301142b"
+      },
+      {
+        "file": "weights/reader.25.bin",
+        "bytes": 2097152,
+        "sha256": "88a9071657b40d600f7c9531fc150ae20b613751e074d8e52798851f60e57424"
+      },
+      {
+        "file": "weights/reader.26.bin",
+        "bytes": 2097152,
+        "sha256": "2722b9ef4ce4d724fc0feafc52c9ba253032a9546e248a7c9da04b94cd70496b"
+      },
+      {
+        "file": "weights/reader.27.bin",
+        "bytes": 2097152,
+        "sha256": "dfcd2f7085f6404808663c31078bc577531203c9b23956ea9b188a8cc6017645"
+      },
+      {
+        "file": "weights/reader.28.bin",
+        "bytes": 2097152,
+        "sha256": "72d03b02eec4639566680ddc63e40f9bfc3ff39b2dd8117adfcbbcaedcf213ae"
+      },
+      {
+        "file": "weights/reader.29.bin",
+        "bytes": 2097152,
+        "sha256": "dec0c656f1fc33a19b9ab974318e8adbbb857d8d713b182b6342b816a4022084"
+      },
+      {
+        "file": "weights/reader.30.bin",
+        "bytes": 2097152,
+        "sha256": "b7e3115101fe0c9034dddc9fd52cac2dea242e3e2f17099089c30c68b365bf44"
+      },
+      {
+        "file": "weights/reader.31.bin",
+        "bytes": 2097152,
+        "sha256": "9c2a1d7166851d979b695f6b540656393baf70df908700328ee4bb1f7a35945b"
+      },
+      {
+        "file": "weights/reader.32.bin",
+        "bytes": 2097152,
+        "sha256": "8bc257de4423a75ef81a4135daca715c152c8a9fa3cdcb5ef510f94ad8fc018d"
+      },
+      {
+        "file": "weights/reader.33.bin",
+        "bytes": 2097152,
+        "sha256": "bc6344982432afc20b147fa9d5b8d4592ce9174f717974769a2cbe669755f722"
+      },
+      {
+        "file": "weights/reader.34.bin",
+        "bytes": 2097152,
+        "sha256": "5c71e52dbff63ebcb095b4642ad62bc9c29c59e769c2178721b7a8f48e19af66"
+      },
+      {
+        "file": "weights/reader.35.bin",
+        "bytes": 2097152,
+        "sha256": "7382fabc196fa6e3f23e9a33c62cbeddbe8379162441007120c3f236f9415fad"
+      },
+      {
+        "file": "weights/reader.36.bin",
+        "bytes": 2097152,
+        "sha256": "983f423cd2ee4894b9844486995cf91b1e062c84dc6131b3b6d6d11320be77b5"
+      },
+      {
+        "file": "weights/reader.37.bin",
+        "bytes": 2097152,
+        "sha256": "8cb75c0902219b0bfaca230508030db3e91175faeb78e94924a33f4307417d08"
+      },
+      {
+        "file": "weights/reader.38.bin",
+        "bytes": 2097152,
+        "sha256": "8438ebefc49017b3a19a2b34cbdbecb032801a38a9c9fffa3470b0481c56e16f"
+      },
+      {
+        "file": "weights/reader.39.bin",
+        "bytes": 2097152,
+        "sha256": "210491e6d30cd389d7fd4b654e96eea6e5331a08d710ff9bd54373fdb56dc473"
+      },
+      {
+        "file": "weights/reader.40.bin",
+        "bytes": 2097152,
+        "sha256": "da0ef9a6a2cdbd2e4ea6ddb19f4c15c8b1d1361408259c08bac5fdd6d774868d"
+      },
+      {
+        "file": "weights/reader.41.bin",
+        "bytes": 2097152,
+        "sha256": "46bafc6f1989381f589079574df096a4089a8ab03b4c51c61bec8b495d289ce4"
+      },
+      {
+        "file": "weights/reader.42.bin",
+        "bytes": 2097152,
+        "sha256": "36122df013c1fab6cd1b8aa0d6e214cc70da2177ab54de8b5ad38d5572b68321"
+      },
+      {
+        "file": "weights/reader.43.bin",
+        "bytes": 2097152,
+        "sha256": "daf7474564c3465facd64ab2c723ce05bcce95119104a1e7e1ea9ffa767898ad"
+      },
+      {
+        "file": "weights/reader.44.bin",
+        "bytes": 2097152,
+        "sha256": "9ee099123fe04ac5479d608d66d1f54127d3dbdbe78ffe277c0d29617647e4a8"
+      },
+      {
+        "file": "weights/reader.45.bin",
+        "bytes": 2097152,
+        "sha256": "23eaf5595e64353aaf90513332b1d992a1d26344364dec08021ec8d4897ed87e"
+      },
+      {
+        "file": "weights/reader.46.bin",
+        "bytes": 2097152,
+        "sha256": "7e20aa44acc76c661042a46cbdafeb9024bf7b5094d8f53a8fd601b1d41b67ee"
+      },
+      {
+        "file": "weights/reader.47.bin",
+        "bytes": 2097152,
+        "sha256": "1710176f9f30dc4c0409487ee500b69f1e8b56043ed0b8fae747deb97bd0a192"
+      },
+      {
+        "file": "weights/reader.48.bin",
+        "bytes": 2097152,
+        "sha256": "dcb08e639fde3cdd0328e852f652649c66387b87519154586e4f6f32952e0269"
+      },
+      {
+        "file": "weights/reader.49.bin",
+        "bytes": 2097152,
+        "sha256": "2cbf0dbde0bc07530667807bb93661105462214461c69e2ac0adb6c74717a10e"
+      },
+      {
+        "file": "weights/reader.50.bin",
+        "bytes": 2097152,
+        "sha256": "c06c590fc731d1644cd2cb6d09b8e162adb1c85284485de67e8741ca5e4beae6"
+      },
+      {
+        "file": "weights/reader.51.bin",
+        "bytes": 2097152,
+        "sha256": "9f1e1556d13997f0d8aa007be04e471915917028b0f36a1039a2ebad119ea85d"
+      },
+      {
+        "file": "weights/reader.52.bin",
+        "bytes": 2097152,
+        "sha256": "73e8e905b458806cbabc81f312588afb698138f64d0dfc68231be273a946f1a6"
+      },
+      {
+        "file": "weights/reader.53.bin",
+        "bytes": 2097152,
+        "sha256": "fd1c9f102b4c90d43781ce4d967ff64bccef74e9d49969d8f230d29874726a60"
+      },
+      {
+        "file": "weights/reader.54.bin",
+        "bytes": 2097152,
+        "sha256": "e5d1a7edc1ca384ab594d086ec9f532417341cb298f8ae5af92ca63f84285990"
+      },
+      {
+        "file": "weights/reader.55.bin",
+        "bytes": 2097152,
+        "sha256": "de610f7f5c8759c0bc7f6f2fb580ed1fc8330498c5e2125c30e8a7bd70abbd58"
+      },
+      {
+        "file": "weights/reader.56.bin",
+        "bytes": 2097152,
+        "sha256": "f0f9a41cb8f95969bfd17d38a1c00d4f69583b5aeddc78918c395585415d74bb"
+      },
+      {
+        "file": "weights/reader.57.bin",
+        "bytes": 2097152,
+        "sha256": "661d0adc9a6635def5664ff7228140e2cf2a80004873b99f3dff95713d8bbc71"
+      },
+      {
+        "file": "weights/reader.58.bin",
+        "bytes": 2097152,
+        "sha256": "4dc1fbfd647422b6dc96680d4537f0c5c0f11e3b5664a19814b46a6324c8dcbb"
+      },
+      {
+        "file": "weights/reader.59.bin",
+        "bytes": 2097152,
+        "sha256": "93a4cd99a5c43c308d78659b4d24a56d12ae949f4946fd471223fe43e35e0236"
+      },
+      {
+        "file": "weights/reader.60.bin",
+        "bytes": 266851,
+        "sha256": "351a92edd93b6a0898c21ab3a0dbe4f924723648511a1cbde3fa67092bf79400"
+      }
+    ]
+  }
+}

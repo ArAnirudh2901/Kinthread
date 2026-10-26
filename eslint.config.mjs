@@ -10,9 +10,12 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".wrangler/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "public/r/**",
+    "vendor/kinship/v10-model/runtime/pyodide/**",
   ]),
 ]);
 

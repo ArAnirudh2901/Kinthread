@@ -22,6 +22,9 @@ async function walk(dir) {
 
 const files = await walk(out);
 const rel = (p) => `/${path.relative(out, p).split(path.sep).join('/')}`;
+if (!files.some((file) => rel(file) === '/model-release.json')) {
+  throw new Error('model-release.json is missing from the Cloudflare Pages export; a new deployment would leave release checks at 404');
+}
 
 // 1. limits
 let bytes = 0;

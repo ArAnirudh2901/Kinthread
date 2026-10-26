@@ -1,27 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { releaseMatches, verifyPublishedRelease } from '../src/lib/model/release.js';
+import { releaseMatches, validPublishedRelease, verifyPublishedRelease } from '../src/lib/model/release.js';
 import { RUNTIME } from '../src/lib/runtime.generated.js';
 import { verifyFileBytes } from '../runtime/file-integrity.js';
 import { releaseIdentityMatches } from '../scripts/release-identity.mjs';
 
-const valid = {
-  releaseId: 'v10-r8p', checkpointSha256: 'a'.repeat(64), contentHash: 'b'.repeat(12), modelBase: '/m/bbbbbbbbbbbb/',
-  files: { 'qa.0.bin': { bytes: 3, sha256: 'c'.repeat(64) } },
-};
+const valid = structuredClone(RUNTIME.release);
 
 test('release manifest must match the embedded identity, checkpoint, content hash, and every file', () => {
   assert.equal(releaseMatches(valid, structuredClone(valid)), true);
-  for (const key of ['releaseId', 'checkpointSha256', 'contentHash', 'modelBase']) {
+  for (const key of ['releaseId', 'checkpointSha256', 'contentHash', 'runtimeHash', 'runtime', 'modelBase']) {
     const changed = structuredClone(valid);
     changed[key] = 'different';
     assert.equal(releaseMatches(valid, changed), false, `${key} mismatch is rejected`);
   }
   const changedFile = structuredClone(valid);
-  changedFile.files['qa.0.bin'].sha256 = 'd'.repeat(64);
+  const firstFile = Object.keys(changedFile.files)[0];
+  changedFile.files[firstFile].sha256 = 'd'.repeat(64);
   assert.equal(releaseMatches(valid, changedFile), false);
   const missingFile = structuredClone(valid);
-  delete missingFile.files['qa.0.bin'];
+  delete missingFile.files[firstFile];
   assert.equal(releaseMatches(valid, missingFile), false);
 });
 
@@ -43,11 +41,20 @@ test('same-size cached bytes with a different hash are rejected', async () => {
 
 test('page release check fetches the published manifest without cache', async () => {
   let request;
-  const matches = await verifyPublishedRelease(async (...args) => {
+  const release = await verifyPublishedRelease(async (...args) => {
     request = args;
     return { ok: true, json: async () => RUNTIME.release };
   });
-  assert.equal(matches, true);
+  assert.equal(release.releaseId, RUNTIME.release.releaseId);
   assert.equal(request[0], '/model-release.json');
   assert.deepEqual(request[1], { cache: 'no-store' });
+});
+
+test('a future model release can use its own versioned assets and runtime', () => {
+  const future = structuredClone(valid);
+  future.releaseId = 'v10-r9';
+  future.model.releaseId = 'v10-r9';
+  future.model.version = 'v10-r9';
+  assert.equal(validPublishedRelease(future), true);
+  assert.equal(releaseMatches(valid, future), false);
 });

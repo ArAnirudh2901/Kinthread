@@ -1,0 +1,5 @@
+{
+  "releaseId": "v10-r8p",
+  "checkpoint": "runs/v10-r8p-final/best.pt",
+  "checkpointSha256": "38c289d351d6517b5cde1bc9fb64ea97bd33eee193639d6351edda52fdfd7a52"
+}

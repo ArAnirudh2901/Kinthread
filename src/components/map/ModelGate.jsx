@@ -63,10 +63,11 @@ export default function ModelGate() {
   const model = useModel();
   const req = useSyncExternalStore(gateStore.subscribe, gateStore.request, gateStore.serverRequest);
   const [closedId, setClosedId] = useState(0);
-  const [woven, setWoven] = useState(false);
+  const [wovenId, setWovenId] = useState(null);
   const dialog = useRef(null), skin = useRef(null), ghost = useRef(null), body = useRef(null);
   const closing = useRef(false);
   const open = !!req && req.id !== closedId;
+  const woven = wovenId === req?.id;
   const parts = () => ({ dialog: dialog.current, skin: skin.current, ghost: ghost.current, body: body.current });
 
   useLayoutEffect(() => {
@@ -104,7 +105,7 @@ export default function ModelGate() {
 
   const state = ready && woven ? 'ready' : model.status === 'error' ? 'error' : busy || ready ? 'busy' : 'ask';   // ready but still weaving: keep counting
   // one value drives the weave and the number: the download, followed smoothly (never ahead, never backwards)
-  const progress = useFollowedProgress(ready ? 1 : busy ? downloadPct(model) / 100 : 0);
+  const progress = useFollowedProgress(ready ? 1 : busy ? downloadPct(model) / 100 : 0, req?.id || 0);
 
   return (
     <dialog ref={dialog} className={s.gate} data-state={state} aria-labelledby="gate-title" onCancel={(e) => { e.preventDefault(); close(); }}>
@@ -113,7 +114,7 @@ export default function ModelGate() {
       <div ref={body} className={s.body} tabIndex={-1}>
         <div className={s.brand}><Mark size={26} /><span id="gate-title">Kinthread</span></div>
         {open && (
-          <WeaveStage progress={progress} onWoven={() => setWoven(true)}>
+          <WeaveStage key={req.id} progress={progress} onWoven={() => setWovenId(req.id)}>
             {state === 'ask' && <AskCopy total={model.total} onStart={() => startModel()} onLater={close} />}
             {(state === 'busy' || state === 'ready') && <DownloadStatus model={model} shown={progress} onHide={close} woven={woven} />}
             {state === 'error' && (
@@ -121,9 +122,9 @@ export default function ModelGate() {
                 <h2 className={w.title}>The model couldn&rsquo;t load.</h2>
                 <p className={w.text}>{model.error?.message || 'Check the connection and try again.'}</p>
                 <div className={w.actions}>
-                  {model.error?.code === 'release-mismatch'
-                    ? <button type="button" className={w.primary} onClick={() => window.location.reload()}>Reload page</button>
-                    : <button type="button" className={w.primary} onClick={() => retryModel()}>Try again</button>}
+                  <button type="button" className={w.primary} onClick={() => retryModel({ update: !!req?.update })}>
+                    {model.error?.code === 'release-check' ? 'Download latest model' : 'Try again'}
+                  </button>
                   <button type="button" className={w.quiet} onClick={close}>Close</button>
                 </div>
               </>

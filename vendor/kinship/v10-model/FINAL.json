@@ -1,0 +1,128 @@
+{
+ "checkpoint": "r8p@notebooks",
+ "setting": "all",
+ "flags": "--verifier /kaggle/working/verifier.json --cover --split_search --para 2 --k 16",
+ "dev_base": {
+  "r7": {
+   "fair": 72.7,
+   "verified": 76.5,
+   "raw": {
+    "dev": "531/748 = 71.0%",
+    "dev fair": "519/714 = 72.7%",
+    "dev verified": "497/650 = 76.5%"
+   }
+  },
+  "r8p@notebooks": {
+   "fair": 73.0,
+   "verified": 76.5,
+   "raw": {
+    "dev": "534/748 = 71.4%",
+    "dev fair": "521/714 = 73.0%",
+    "dev verified": "497/650 = 76.5%"
+   }
+  },
+  "r8@notebooks": {
+   "fair": 72.1,
+   "verified": 75.5,
+   "raw": {
+    "dev": "526/748 = 70.3%",
+    "dev fair": "515/714 = 72.1%",
+    "dev verified": "491/650 = 75.5%"
+   }
+  }
+ },
+ "dev_sweep": {
+  "base": {
+   "fair": 73.0,
+   "verified": 76.5,
+   "raw": {
+    "dev": "534/748 = 71.4%",
+    "dev fair": "521/714 = 73.0%",
+    "dev verified": "497/650 = 76.5%"
+   }
+  },
+  "cover": {
+   "fair": 73.0,
+   "verified": 76.5,
+   "raw": {
+    "dev": "534/748 = 71.4%",
+    "dev fair": "521/714 = 73.0%",
+    "dev verified": "497/650 = 76.5%"
+   }
+  },
+  "para2": {
+   "fair": 73.2,
+   "verified": 76.8,
+   "raw": {
+    "dev": "538/748 = 71.9%",
+    "dev fair": "523/714 = 73.2%",
+    "dev verified": "499/650 = 76.8%"
+   }
+  },
+  "split": {
+   "fair": 73.2,
+   "verified": 76.6,
+   "raw": {
+    "dev": "536/748 = 71.7%",
+    "dev fair": "523/714 = 73.2%",
+    "dev verified": "498/650 = 76.6%"
+   }
+  },
+  "verifier": {
+   "fair": 73.4,
+   "verified": 77.1,
+   "raw": {
+    "dev": "536/748 = 71.7%",
+    "dev fair": "524/714 = 73.4%",
+    "dev verified": "501/650 = 77.1%"
+   }
+  },
+  "k16": {
+   "fair": 73.1,
+   "verified": 76.6,
+   "raw": {
+    "dev": "536/748 = 71.7%",
+    "dev fair": "522/714 = 73.1%",
+    "dev verified": "498/650 = 76.6%"
+   }
+  },
+  "ver+cover+split": {
+   "fair": 73.1,
+   "verified": 76.6,
+   "raw": {
+    "dev": "535/748 = 71.5%",
+    "dev fair": "522/714 = 73.1%",
+    "dev verified": "498/650 = 76.6%"
+   }
+  },
+  "all": {
+   "fair": 73.9,
+   "verified": 77.2,
+   "raw": {
+    "dev": "542/748 = 72.5%",
+    "dev fair": "528/714 = 73.9%",
+    "dev verified": "502/650 = 77.2%"
+   }
+  }
+ },
+ "locked_test": {
+  "fair": 68.8,
+  "verified": 72.2,
+  "raw": {
+   "test": "486/721 = 67.4%",
+   "test fair": "474/689 = 68.8%",
+   "test verified": "462/640 = 72.2%"
+  }
+ },
+ "r7_locked_test": {
+  "fair": 66.2,
+  "verified": 70.5,
+  "raw": {
+   "test": "471/721 = 65.3%",
+   "test fair": "456/689 = 66.2%",
+   "test verified": "451/640 = 70.5%"
+  }
+ },
+ "improvement_over_r7_fair": 2.6,
+ "improvement_over_r7_verified": 1.7
+}

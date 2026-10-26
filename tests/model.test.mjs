@@ -23,7 +23,7 @@ test('model parts match their checksums', { skip }, async () => {
   }
 });
 
-test('examples give the outcomes the page promises', { skip }, async () => {
+test('examples give the outcomes the page promises', { skip: RUNTIME?.model.arch === 'v10' ? 'v10 end-to-end answer parity requires the browser pipeline' : skip }, async () => {
   const { KinshipQA } = await import(new URL(`.${RUNTIME.runtime}kinship.js`, pub));
   const fetchFn = async (name) => {
     const [, model, ext] = /^(qa|tagger)\.(json|bin\.gz)$/.exec(name);

@@ -12,11 +12,11 @@ if (typeof window !== 'undefined') {
 }
 
 /** Open the model window from `from` (an element) and start the download. `then` runs after it closes. */
-export function requestModel(from, { then } = {}) {
+export function requestModel(from, { then, update = false } = {}) {
   const el = from || lastPressed || document.querySelector('[data-solve]');
-  request = { id: ++seq, from: el?.isConnected ? el : null, then };
+  request = { id: ++seq, from: el?.isConnected ? el : null, then, update };
   emit();
-  startModel();
+  startModel({ update });
 }
 
 export function setGateOpen(v) {

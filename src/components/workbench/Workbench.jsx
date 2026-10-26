@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { scrollToTarget } from '@/lib/smooth-scroll';
-import { askModel, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
+import { askModel, checkReleaseOnPageLoad, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
 import { useModel } from '@/lib/model/useModel';
 import { gateStore, requestModel } from '@/lib/model/gate';
 import { mbText } from '@/lib/format';
@@ -32,7 +32,9 @@ export default function Workbench() {
   const mapRef = useRef(null);
 
   // returning visitors start at once; a first visit asks first (ModelGate)
-  useEffect(() => { if (modelOnDevice()) startModel(); }, []);
+  useEffect(() => {
+    checkReleaseOnPageLoad().then(() => { if (modelOnDevice()) startModel(); });
+  }, []);
 
   // A release notice on another route sends the visitor here and opens the existing model download flow.
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function Workbench() {
     if (url.searchParams.get('updateModel') !== '1') return;
     url.searchParams.delete('updateModel');
     history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-    requestModel(document.querySelector('[data-solve]'));
+    requestModel(document.querySelector('[data-solve]'), { update: true });
   }, []);
 
   // the hero's "Try an example" button

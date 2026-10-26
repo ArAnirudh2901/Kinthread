@@ -9,10 +9,12 @@
 //                                                    {type:'fatal', code, message}
 //                                                    {type:'names'|'result'|'error', id, ...}
 import { KinshipQA, bestEngine, bracketNames } from './kinship.js';
+import { initializeV10, detectV10, askV10 } from './v10-pipeline.js';
 import { verifyFileBytes } from './file-integrity.js';
 
 const CACHE_PREFIX = 'kinship-model-';
 let qa = null;
+let v10ReadyMsg = null;
 let starting = false;
 const post = (msg) => self.postMessage(msg);
 
@@ -64,7 +66,7 @@ async function dropOldCaches(version) {
   } catch { /* nothing cached */ }
 }
 
-const allFiles = (model) => Object.values(model.files).flatMap((f) => [f.json, ...f.parts]);
+const allFiles = (model) => Object.values(model.files).flatMap((f) => [...(f.json ? [f.json] : []), ...(f.parts || [])]);
 
 async function isCached(model, cache) {
   for (const f of allFiles(model)) if (!(await cache.match(model.base + f.file).catch(() => null))) return false;
@@ -182,7 +184,7 @@ function weightsResponse(entry, ctx) {
     async pull(ctrl) {
       if (i === pending.length) {
         ctrl.close();
-        if (++ctx.streamsDone === 2) post({ type: 'progress', stage: 'init' });
+        if (++ctx.streamsDone === ctx.expectedStreams) post({ type: 'progress', stage: 'init' });
         return;
       }
       try { ctrl.enqueue(await pending[i++]); }
@@ -202,10 +204,11 @@ async function route(name, ctx) {
 
 async function init({ model, engine = 'auto', repair = false, maxThreads = 4, maxDownloads = 3, deviceTier = 'high' }) {
   if (qa) return post(qa.readyMsg);
+  if (v10ReadyMsg) return post(v10ReadyMsg);
   if (starting) return;
   starting = true;
   const t0 = performance.now();
-  const ctx = { model, repair, cache: null, limit: limiter(Math.max(1, Math.min(3, maxDownloads))), puts: [], error: null, streamsDone: 0, cacheFailed: false };
+  const ctx = { model, repair, cache: null, limit: limiter(Math.max(1, Math.min(3, maxDownloads))), puts: [], error: null, streamsDone: 0, expectedStreams: 2, cacheFailed: false };
   try {
     if (typeof WebAssembly !== 'object') throw new LoadError('unsupported', 'WebAssembly is not available in this browser.');
     if (!globalThis.crypto?.subtle) throw new LoadError('unsupported', 'Secure SHA-256 verification is not available in this browser.');
@@ -217,13 +220,24 @@ async function init({ model, engine = 'auto', repair = false, maxThreads = 4, ma
     const restored = !!ctx.cache && !repair && await isCached(model, ctx.cache);
     post({ type: 'progress', stage: restored ? 'restore' : 'download', loaded: 0, total: model.totalBytes, restored });
     ctx.progress = tracker(model.totalBytes);
+    if (model.arch === 'v10') {
+      ctx.expectedStreams = 1;
+      const runtime = await initializeV10({ model, ctx, getFile, weightsResponse, engine, deviceTier, maxThreads });
+      await Promise.allSettled(ctx.puts);
+      const offline = !!ctx.cache && !ctx.cacheFailed && await isCached(model, ctx.cache);
+      if (offline) await dropOldCaches(cacheKey);
+      v10ReadyMsg = { type: 'ready', ...runtime, arch: model.arch, restored, offline, installed: offline,
+        loadMs: performance.now() - t0, maxTokens: Math.max(1, model.blockSize - 96), deviceTier };
+      post(v10ReadyMsg);
+      return;
+    }
     const kind = engine === 'single' ? bestEngine().replace(/-mt$/, '') : engine;
     qa = await KinshipQA.load({ base: '', fetchFn: (name) => route(name, ctx), engine: kind, maxThreads });
     await Promise.allSettled(ctx.puts);
     const offline = !!ctx.cache && !ctx.cacheFailed && await isCached(model, ctx.cache);
     if (offline) await dropOldCaches(cacheKey);
     qa.readyMsg = {
-      type: 'ready', engine: qa.engine, threads: qa.threads, tile: qa.tile, gunzip, restored, offline,
+      type: 'ready', arch: model.arch, engine: qa.engine, threads: qa.threads, tile: qa.tile, gunzip, restored, offline,
       installed: offline, loadMs: performance.now() - t0, maxTokens: qa.qa.cfg.block_size - 16, deviceTier,
     };
     post(qa.readyMsg);
@@ -244,6 +258,11 @@ function budget(story, people) {
 }
 
 function names({ id, story, extra = [] }) {
+  if (v10ReadyMsg) {
+    try { const t = performance.now(); const r = detectV10(story, extra); post({ type: 'names', id, ...r, ms: performance.now() - t }); }
+    catch (e) { post({ type: 'error', id, code: 'names', message: String(e?.message || e) }); }
+    return;
+  }
   if (!qa) return post({ type: 'error', id, code: 'not-ready', message: 'The model is not ready yet.' });
   try {
     const t = performance.now();
@@ -267,6 +286,11 @@ function trace(story, people, a, b, steps) {
 }
 
 function ask({ id, story, a, b, extra = [] }) {
+  if (v10ReadyMsg) {
+    try { const { result, trace } = askV10(story, a, b, extra); post({ type: 'result', id, result, trace }); }
+    catch (e) { post({ type: 'error', id, code: 'inference', message: String(e?.message || e) }); }
+    return;
+  }
   if (!qa) return post({ type: 'error', id, code: 'not-ready', message: 'The model is not ready yet.' });
   try {
     const { perView, ...r } = qa.ask(story, a, b, { names: extra });
