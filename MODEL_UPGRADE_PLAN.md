@@ -212,3 +212,9 @@ visible. Browser automation inventory is disabled in Work settings, so this chec
 Production remains v8; locked-test accuracy remains 68.8% fair / 72.2% verified. No deployment, commit, or push was
 made. Full 300-question browser/Python parity, update rollback paths, confidence calibration, and mobile/low-memory
 latency tests remain open.
+
+## Production publication — 2026-10-27
+
+The owner explicitly authorized publication of v10-r8p before the remaining quality gates were complete. Cloudflare Pages project kinthread now serves the release. The production no-cache manifest reports checkpoint SHA-256 38c289d351d6517b5cde1bc9fb64ea97bd33eee193639d6351edda52fdfd7a52, content hash c4a1d87737c6, and runtime hash f608eed15e9b. Live SHA-256/size checks passed for all 66 model assets (127,187,553 bytes) and 20 runtime files (14,012,183 bytes). The website update flow remains version-aware and verifies asset bytes before accepting an installed release.
+
+The release does not meet the 85% target: locked-test results are 68.8% fair / 72.2% verified. The local Chrome paternal-cousin check (tentative, uncalibrated 0.95, 9,632 ms, SIMD/two threads) is a single smoke test. Broad browser/Python parity, calibration, and mobile/low-memory budgets remain unresolved. This entry supersedes earlier planned “keep v8 in production” instructions; those entries document the pre-publication decision.

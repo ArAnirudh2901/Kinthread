@@ -6,17 +6,9 @@ Kinthread reads a short family story, or a textbook question like *"A is the bro
 is C related to B?"*, and works out how two people are related. It shows the working the way you would write it on
 paper: one fact at a time, drawn as a family tree, ending in the answer.
 
-Production currently uses the v8, 13M-parameter relation model and its 5.1M name finder. Both run **entirely in your
-browser**. Your story never leaves your device; there is no inference server, account or API key. This checkout also
-contains an in-progress v10-r8p browser candidate; it is not production-ready yet.
+Production serves the v10-r8p relation model in the browser. Stories stay on the user's device; there is no inference server, account, or API key. The release is exact fp32 and is identified separately from its content-addressed asset cache.
 
-The active Cloudflare Pages deployment is still v8. The v10-r8p candidate now passes a three-link browser answer
-smoke check in Chrome on local runtime `f608eed15e9b`: the expected “paternal cousin” was shown as a tentative
-`assumed` result (uncalibrated score 0.95) in 9.6 seconds on this device, using two WebAssembly threads. This is one
-question, not broad parity or an accuracy estimate. The Node/Pyodide integration regression also passes. The locked
-test remains 68.8% fair / 72.2% verified, below the 85% target; keep v8 in production until broad parity, accuracy,
-calibration, and device-performance gates pass. See [the migration plan](MODEL_UPGRADE_PLAN.md).
-See [the migration plan](MODEL_UPGRADE_PLAN.md) for Cloudflare behavior and release gates.
+The v10-r8p deployment was explicitly requested before all quality gates were complete. A local Chrome three-link smoke check returned the expected paternal-cousin answer as tentative (uncalibrated score 0.95) in 9.6 seconds on two WebAssembly threads. This is one question, not broad parity or an accuracy estimate. The locked test remains 68.8% fair / 72.2% verified, below the 85% target. Broad browser parity, calibration, and low-power/mobile budgets remain open. See [the migration plan](MODEL_UPGRADE_PLAN.md) for release details and limitations.
 
 <p align="center">
   <img src="docs/map-dark.png" alt="Worked answer: Victor's father George, George's wife Helen, Helen's daughter Rose, so Rose is Victor's sister" width="49%">
