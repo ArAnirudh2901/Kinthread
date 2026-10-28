@@ -237,8 +237,10 @@ function request(msg) {
   });
 }
 
+// reader: what the v10 reader gets instead ({ text, extra, asked }, exam.js readerInput); v8 reads story and extra.
+
 /** People found by the name model, plus the story's length in model tokens. */
-export const detectPeople = (story, extra = []) => request({ type: 'names', story, extra });
+export const detectPeople = (story, extra = [], reader = null) => request({ type: 'names', story, extra, reader });
 
 /** How is b related to a? Resolves to { result, trace, roundTripMs }. */
-export const askModel = (story, a, b, extra = []) => request({ type: 'ask', story, a, b, extra });
+export const askModel = (story, a, b, extra = [], reader = null) => request({ type: 'ask', story, a, b, extra, reader });

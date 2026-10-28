@@ -59,7 +59,20 @@ export function forModel(text) {
 /** Spoken-clue puzzles ("Pointing to a photo, A said…") need reasoning about the speaker; not supported. */
 export const spokenClue = (text) => /\b[Pp]ointing (?:to|at|towards)\b|\b[Ii]ntroducing\b/.test(text);
 
-/** Everything the model needs from what the user typed. */
+// a question the text asks itself, in forms splitQuestion does not parse: "Adam is the ____ of Padma.", "Find the relation…"
+const OWN_QUESTION = /\?|_{2,}|\bfind the relation/i;
+
+/** What the v10 reader gets: the text as written, so kinlogic.prepare and kinlogic.exam find the people, the question
+ * and its answer options themselves (the input eval.run_real measured). asked: the text seems to hold its own question,
+ * so none is added (the pipeline adds the picker's question if the reading asks about other people). A question found
+ * here about anyone else is dropped with its options. */
+export function readerInput(text, a = null, b = null) {
+  const q = splitQuestion(text);
+  if (q.question && (q.a !== a || q.b !== b)) return { text: q.story, asked: false };
+  return { text, asked: !!q.question || OWN_QUESTION.test(text) };
+}
+
+/** Everything the v8 model needs from what the user typed. */
 export function prepare(text) {
   const { story, a, b } = splitQuestion(text);
   return { plain: story, model: forModel(story), letters: letterNames(story), a, b };
