@@ -323,8 +323,8 @@
       "sha256": "5c194a8b4e4471666e83ce3377aee1080d79cdc5f8bf6e6690d09f5c4fd35ef1"
     },
     "v10-model/runtime/v10-decoder.js": {
-      "bytes": 7405,
-      "sha256": "7b2404b5c4c003ee1287ff04befe3329d2932a5a3a4e1fb96cf4c27ff744c82a"
+      "bytes": 8610,
+      "sha256": "b4080ea2dac4d7420de5c17bbff400ecabd40a5103dfb586e0cc63b35e9d8823"
     },
     "v10-model/runtime/v10-pipeline.js": {
       "bytes": 8904,

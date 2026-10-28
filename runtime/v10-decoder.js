@@ -2,13 +2,16 @@
 const SPECIAL = { bos: 2, cont: 3, eos: 5, sep: 4 };
 const join = (a, b) => a + b.slice(2);
 const render = (written) => written.join(' ').replace(/(?: ;)+$/, '');
+const QUESTION_STARTS = ['ask', 'who', 'count', 'gender', 'pair', 'prof'];
 
 export class V10Decoder {
-  constructor(reader, meta, width = 8, maxNew = 96) {
+  // reserve: within that many tokens of maxNew, finish the statement and write the question (0 = off).
+  constructor(reader, meta, width = 8, maxNew = 96, reserve = 0) {
     this.reader = reader;
     this.meta = meta;
     this.width = width;
     this.maxNew = maxNew;
+    this.reserve = reserve;
     this.stoi = new Map(meta.vocab.map((t, i) => [t, i]));
     this.rank = new Map(meta.merges.map(([a, b], i) => [`${a}\0${b}`, i]));
     this.g = meta.grammar;
@@ -44,7 +47,25 @@ export class V10Decoder {
     return tokens.flatMap((t) => this.word(symbols.get(t) || t));
   }
 
-  allowed(written, entities) {
+  // Matches kinlogic.facts.allowed_next: a complete statement may also end the reading.
+  allowed(written, entities, left = Infinity) {
+    const next = this.next(written, entities);
+    return this.budget(written, next.includes(';') ? [...next, '<eos>'] : next, left);
+  }
+
+  // kinlogic.facts.budget_filter; left counts the tokens still allowed, this one included.
+  budget(written, allowed, left) {
+    if (left > this.reserve) return allowed;
+    const stmts = [[]];
+    for (const t of written) if (t === ';') stmts.push([]); else stmts.at(-1).push(t);
+    const cur = stmts.at(-1), hasQuestion = stmts.some((s) => QUESTION_STARTS.includes(s[0]));
+    const keep = (xs) => { const got = allowed.filter((t) => xs.includes(t)); return got.length ? got : allowed; };
+    if (!cur.length) return keep(hasQuestion ? ['<eos>'] : QUESTION_STARTS);
+    if (allowed.includes(';')) return keep(hasQuestion ? ['<eos>'] : [';']);
+    return allowed;
+  }
+
+  next(written, entities) {
     let newCount = 0;
     for (const t of written) if (t[0] === '#') newCount = Math.max(newCount, Number(t.slice(1)) || 0);
     const people = [...entities, ...Array.from({ length: newCount }, (_, i) => `#${i + 1}`)];
@@ -52,7 +73,6 @@ export class V10Decoder {
     const other = (x) => people.filter((p) => p !== x);
     const cur = [];
     for (const t of written) { if (t === ';') cur.length = 0; else cur.push(t); }
-    const eos = (xs) => xs.includes(';') ? [...xs, '<eos>'] : xs;
     if (!cur.length) return [...people, ...this.starters, '<eos>'];
     const [a] = cur, n = cur.length, last = cur.at(-1);
     const sided = (i, kinOnly = false) => n === i ? [...this.g.sides, ...this.g.relations.filter((r) => !kinOnly || this.g.kin.includes(r))]
@@ -94,7 +114,7 @@ export class V10Decoder {
       metrics.decodeSteps++;
       const candidates = [];
       for (let h = 0; h < hyps.length; h++) {
-        const allowed = this.allowed(hyps[h].written, entities)
+        const allowed = this.allowed(hyps[h].written, entities, this.maxNew - step)
           .map((t) => [t, this.stoi.get(t === ';' ? '<sep>' : t)])
           .filter(([, id]) => id !== undefined);
         if (!allowed.length) continue;
@@ -113,9 +133,9 @@ export class V10Decoder {
         const slot = this.nextSlot++;
         children.push({ written: [...parent.written, c.text === '<sep>' ? ';' : c.text], score: c.score,
           n: count, slots: [...parent.slots, slot], token: c.token, slot, position: P + parent.n,
-          context: [...Array(P).keys(), ...parent.slots] });
+          context: [...Array(P).keys(), ...parent.slots, slot] });
       }
-      if (!children.length) break;
+      if (!children.length || finished.length >= k) break;   // like reader.generate: stop at k finished readings
       const rows = children.map((h) => ({ token: h.token, position: h.position, slot: h.slot, context: h.context }));
       const forwardStart = performance.now();
       const states = this.reader.forward(rows, { copyKeys: false });
