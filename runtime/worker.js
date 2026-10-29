@@ -4,10 +4,11 @@
 //
 // main -> worker                                   worker -> main
 //   {type:'init', model, engine?, repair?}           {type:'boot', isolated, cores}
-//   {type:'names', id, story, extra}                 {type:'progress', stage, loaded?, total?, restored?}
-//   {type:'ask', id, story, a, b, extra}             {type:'ready', engine, threads, ...}
+//   {type:'names', id, story, extra, reader?}        {type:'progress', stage, loaded?, total?, restored?}
+//   {type:'ask', id, story, a, b, extra, reader?}    {type:'ready', engine, threads, ...}
 //                                                    {type:'fatal', code, message}
 //                                                    {type:'names'|'result'|'error', id, ...}
+// reader {text, extra, asked}: the v10 input (the user's text as written); v8 reads story and extra.
 import { KinshipQA, bestEngine, bracketNames } from './kinship.js';
 import { initializeV10, detectV10, askV10 } from './v10-pipeline.js';
 import { verifyFileBytes } from './file-integrity.js';
@@ -257,9 +258,13 @@ function budget(story, people) {
   return qa.viewTokens(ex, 0).ids.length;
 }
 
-function names({ id, story, extra = [] }) {
+function names({ id, story, extra = [], reader = null }) {
   if (v10ReadyMsg) {
-    try { const t = performance.now(); const r = detectV10(story, extra); post({ type: 'names', id, ...r, ms: performance.now() - t }); }
+    try {
+      const t = performance.now();
+      const r = reader ? detectV10(reader.text, reader.extra) : detectV10(story, extra);
+      post({ type: 'names', id, ...r, ms: performance.now() - t });
+    }
     catch (e) { post({ type: 'error', id, code: 'names', message: String(e?.message || e) }); }
     return;
   }
@@ -285,9 +290,12 @@ function trace(story, people, a, b, steps) {
   };
 }
 
-function ask({ id, story, a, b, extra = [] }) {
+function ask({ id, story, a, b, extra = [], reader = null }) {
   if (v10ReadyMsg) {
-    try { const { result, trace } = askV10(story, a, b, extra); post({ type: 'result', id, result, trace }); }
+    try {
+      const { result, trace } = reader ? askV10(reader.text, a, b, reader.extra, { asked: reader.asked }) : askV10(story, a, b, extra);
+      post({ type: 'result', id, result, trace });
+    }
     catch (e) { post({ type: 'error', id, code: 'inference', message: String(e?.message || e) }); }
     return;
   }

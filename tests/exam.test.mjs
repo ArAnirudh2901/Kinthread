@@ -1,7 +1,7 @@
 // Exam-style input: the question pulled out of pasted text, letters as names, "is the R of" rewritten.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { forModel, letterNames, prepare, splitQuestion, spokenClue } from '../src/lib/exam.js';
+import { forModel, letterNames, prepare, readerInput, splitQuestion, spokenClue } from '../src/lib/exam.js';
 
 test('finds the question and who it asks about', () => {
   const cases = [
@@ -50,4 +50,23 @@ test('prepare: story without the question, rewritten for the model', () => {
   assert.equal(p.plain, 'P is the son of Q. Q is the wife of R. R is the father of S.');
   assert.deepEqual(p.letters.sort(), ['P', 'Q', 'R', 'S']);
   assert.ok(p.model.startsWith("Q's son P was there."));
+});
+
+test('readerInput: v10 reads the text as written, question and options included', () => {
+  const exam = 'A is the brother of B. C is the father of A. How is C related to B? (a) Uncle (b) Father (c) Son';
+  assert.deepEqual(readerInput(exam, 'B', 'C'), { text: exam, asked: true });   // no rewording, nothing removed
+  // the picker asks about someone else: the pasted question and its options go, the picker's question is added
+  assert.deepEqual(readerInput(exam, 'C', 'B'), { text: 'A is the brother of B. C is the father of A.', asked: false });
+  const story = "Ashley's daughter, Lillian, asked her mom to read her a story.";
+  assert.deepEqual(readerInput(story, 'Ashley', 'Lillian'), { text: story, asked: false });
+  // "If X's child is Y, then how is Y related to X?": the fact shares the question's sentence and must stay
+  const one = "If Umesh's child is Utkarsh, then how is Utkarsh related to Umesh? (1) Wife (2) Son-in-law (3) Brother (4) Son";
+  assert.equal(prepare(one).plain, '');   // what v8 reads: the fact went with the question
+  assert.deepEqual(readerInput(one, 'Umesh', 'Utkarsh'), { text: one, asked: true });
+  // questions splitQuestion does not parse still go as written (the pipeline checks the reading asks about the pair)
+  for (const own of ['The husband of the mother of Padma is Adam. Adam is the ____ of Padma.',
+    'Hannah was proud of her sister-in-law Nina. Find the relationship between Nina and Hannah.',
+    'nina\'s grandmother is natalie. jitendra is the younger brother of nina. how is jitendra related to nina? (a) brother']) {
+    assert.deepEqual(readerInput(own, 'x', 'y'), { text: own, asked: true }, own);
+  }
 });

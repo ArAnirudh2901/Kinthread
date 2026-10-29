@@ -57,17 +57,28 @@ exam.COVER = True
 def _read(batch):
     return json.loads(str(read_js(json.dumps(batch, separators=(',', ':')))))
 
-def kinthread_detect(text, extra_json):
+def kinthread_detect(text, extra_json, _want_json='null'):
     p = prepare(text, names=json.loads(extra_json))
     return json.dumps({'people': [e['text'] for e in p['ents']], 'tokens': len(p['tokens']), 'prepared': p['tokens'],
                        'entities': p['ents']}, separators=(',', ':'))
 
-def kinthread_solve(text, extra_json):
-    extra = json.loads(extra_json)
+def _solve_text(text, extra):
     p = prepare(text, names=extra)
     priors = name_priors(p['ents'])
     read = with_exact_clauses(with_split_search(_read))
-    r = answer(text, read, priors=priors)
+    return p, priors, answer(text, read, priors=priors)
+
+def _asks(r, p, want):
+    asks = [s for s in parse(r.get('facts') or '')[0] if s['t'] == 'ask']
+    labels = {e['id']: e['text'].lower() for e in p['ents']}
+    return bool(asks) and [labels.get(asks[-1]['x']), labels.get(asks[-1]['y'])] == [w.lower() for w in want]
+
+def kinthread_solve(text, extra_json, want_json='null'):
+    extra, want = json.loads(extra_json), json.loads(want_json)
+    p, priors, r = _solve_text(text, extra)
+    if want and not _asks(r, p, want):   # the text's own question is about other people, or none was read
+        text = f"{text} How is {want[1]} related to {want[0]}?"
+        p, priors, r = _solve_text(text, extra)
     stmts, _ = parse(r.get('facts') or '')
     people = list(dict.fromkeys(t for t in p['tokens'] if t.startswith('@')))
     solved = solve(stmts, people=people, priors=priors)
@@ -97,7 +108,7 @@ def kinthread_solve(text, extra_json):
             from_name = labels.get(target, target)
     fact_edges = [{'from': s['x'], 'to': s['y'], 'relation': s['r']} for s in stmts
                   if s.get('t') == 'rel' and 'claim' not in s and 'part' not in s]
-    result = {'answer': r.get('answer'), 'status': r.get('status'), 'confidence': r.get('confidence', 0.0),
+    result = {'answer': r.get('answer'), 'option': r.get('option'), 'status': r.get('status'), 'confidence': r.get('confidence', 0.0),
               'facts': r.get('facts', ''), 'explanation': r.get('explanation', ''), 'steps': steps,
               'people': [e['text'] for e in p['ents']], 'prepared': p['tokens'], 'entities': p['ents'],
               'traceFacts': [s.strip() for s in (r.get('facts') or '').split(';') if s.strip() and not s.strip().startswith('ask ')],
@@ -126,11 +137,12 @@ def kinthread_solve(text, extra_json):
   return { engine: reader.engine, threads, tile: null, gunzip: 'stream', beam };
 }
 
-const callPython = (name, text, extra) => {
+const callPython = (name, text, extra, want = null) => {
   if (!py) throw new Error('The v10 reasoning runtime is not ready.');
   py.globals.set('kt_text', text);
   py.globals.set('kt_extra', JSON.stringify(extra));
-  const result = py.runPython(`${name}(kt_text, kt_extra)`);
+  py.globals.set('kt_want', JSON.stringify(want));
+  const result = py.runPython(`${name}(kt_text, kt_extra, kt_want)`);
   try { return JSON.parse(result.toString()); }
   finally { result.destroy?.(); }
 };
@@ -141,18 +153,21 @@ export function detectV10(story, extra = []) {
   return { people, found: result.people, tokens: result.tokens };
 }
 
-export function askV10(story, a, b, extra = []) {
+// asked: the text holds its own question (and any answer options), so it is read exactly as written; when the reading's
+// question is not b's relation to a (or none is read), the picker's question is added and the text read again.
+export function askV10(story, a, b, extra = [], { asked = false } = {}) {
   const t0 = performance.now();
-  const question = `${story.trim()}${story.trim() ? ' ' : ''}How is ${b} related to ${a}?`;
+  const question = asked ? story.trim() : `${story.trim()}${story.trim() ? ' ' : ''}How is ${b} related to ${a}?`;
   telemetry = { decodeCalls: 0, promptTokens: 0, prefillRows: 0, decodeRows: 0, decodeSteps: 0,
     prefillMs: 0, forwardMs: 0, probabilityMs: 0, decoderMs: 0 };
   let r;
-  try { r = callPython('kinthread_solve', question, extra); }
+  try { r = callPython('kinthread_solve', question, extra, asked ? [a, b] : null); }
   catch (error) { telemetry = null; throw error; }
   const metrics = telemetry;
   telemetry = null;
   const inferenceMs = performance.now() - t0;
-  const low = ['none', 'unrelated', 'contradiction'].includes(r.status) || /^not related\b/i.test(r.answer || '');
+  // "cannot be determined": an answer option kinlogic.exam chose (the text leaves the relation open), not a relation
+  const low = ['none', 'unrelated', 'contradiction'].includes(r.status) || /^(?:not related|cannot be determined)\b/i.test(r.answer || '');
   const relation = low ? null : r.answer;
   const kind = low ? 'unknown' : r.status === 'unique' && r.confidence >= 0.7 ? 'answer' : 'not sure';
   const entities = Object.fromEntries((r.entities || []).map((e) => [e.id, e.text]));
@@ -162,7 +177,7 @@ export function askV10(story, a, b, extra = []) {
   const factEdges = (r.factEdges || []).map(({ from, to, relation: rel }) => ({
     from: entities[from] || from, to: entities[to] || to, relation: rel,
   }));
-  const result = { kind, relation, status: r.status, confidence: r.confidence || 0, steps: r.steps || [], share: r.confidence || 0,
+  const result = { kind, relation, option: r.option ?? null, status: r.status, confidence: r.confidence || 0, steps: r.steps || [], share: r.confidence || 0,
     pUnknown: low ? 1 : 1 - (r.confidence || 0), pStart: low ? 1 : 1 - (r.confidence || 0),
     pLink: low ? 0 : r.confidence || 0, views: 1, beam, promptTokens: metrics.promptTokens,
     forwardRows: metrics.prefillRows + metrics.decodeRows, decodeRows: metrics.decodeRows,

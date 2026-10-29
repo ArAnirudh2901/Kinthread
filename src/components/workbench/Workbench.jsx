@@ -7,7 +7,7 @@ import { gateStore, requestModel } from '@/lib/model/gate';
 import { mbText } from '@/lib/format';
 import { announce } from '@/lib/kinds';
 import { EXAMPLES } from '@/lib/examples';
-import { prepare, splitQuestion } from '@/lib/exam';
+import { prepare, readerInput, splitQuestion } from '@/lib/exam';
 import { readShare } from '@/lib/share';
 import { MAX_PEOPLE, WORD_LIMIT, countWords } from '@/lib/story';
 import MapPanel from '@/components/map/MapPanel';
@@ -85,8 +85,8 @@ export default function Workbench() {
     const story = st.story;
     const t = setTimeout(async () => {
       try {
-        const p = prepare(story);   // exam questions: question pulled out, letters as names
-        const r = await detectPeople(p.model, [...st.extra, ...p.letters]);
+        const p = prepare(story);   // v8: question pulled out, letters as names; v10 reads the text as written
+        const r = await detectPeople(p.model, [...st.extra, ...p.letters], { text: story, extra: st.extra, asked: false });
         if (id === detectSeq.current) dispatch({ type: 'people', story, people: r.people, tokens: r.tokens });
       } catch { /* model failures surface through the model store */ }
     }, st.want || !story ? 0 : 220);
@@ -114,7 +114,7 @@ export default function Workbench() {
     dispatch({ type: 'runStart', id, story, a, b, extra });
     try {
       const p = prepare(story);
-      const r = await askModel(p.model, a, b, [...extra, ...p.letters]);
+      const r = await askModel(p.model, a, b, [...extra, ...p.letters], { ...readerInput(story, a, b), extra });
       dispatch({ type: 'runDone', id, result: r.result, trace: r.trace, roundTripMs: r.roundTripMs });
     } catch (e) {
       dispatch({ type: 'runError', id, error: { code: e.code || 'inference', message: e.message } });

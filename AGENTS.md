@@ -82,6 +82,7 @@ will decide later).
 | `bun run test` | node tests only (`tests/*.test.mjs`, includes the real model) |
 | `bun run preview` | `wrangler pages dev out` on :8788 (local only) |
 | `bun run deploy` | build, then `wrangler pages deploy out --project-name kinthread --branch main` (owner's account only) |
+| `node tools/input-compare/compare.mjs [out] [tier] [variants]` | v10 input comparison on the page examples + `tools/input-compare/questions.json` through the synced Node/Pyodide pipeline (accuracy, latency, paired wins); `--report run.jsonl` re-summarises a run |
 | `node tools/harness/server.mjs` | serves `out/` on :8791 (COOP/COEP, no X-Frame-Options, HTTP Range) for the browser harness; `SLOW=<ms per MB>` or `POST /__profile` (network simulator) throttle model downloads |
 
 ## Map of the code
@@ -115,9 +116,12 @@ will decide later).
   spring, the control's colour and label fade/blur out, the weave blurs in) and shrinks back into it when ready; the
   solve then runs in view. Solve stays enabled before the model exists, with a note on the one-time size. Returning
   visitors (`modelOnDevice()`) load silently with no window.
-- Exam input (`exam.js`): the pasted question is detected, filled in and removed from what the model reads; answer
-  options are dropped; single letters count as names; "X is the R of Y" is reworded to "Y's R X was there" for the
-  model only (fixes multi-hop chains). The user's text is never changed. Spoken-clue puzzles get a "not supported" tip.
+- Exam input (`exam.js`): the pasted question is detected and fills the picker. v10 reads the text as written,
+  question and answer options included (`readerInput`; `kinlogic.prepare`/`exam` find people, question and options, the
+  input `eval.run_real` measured): a pasted question about other people is dropped with its options, and when the
+  reading does not ask about the picked pair the pipeline adds the picker's question and reads again. v8 only: the
+  question and options are removed, single letters count as names, "X is the R of Y" is reworded to "Y's R X was
+  there" (`forModel`). The user's text is never changed. Spoken-clue puzzles get a "not supported" tip.
 - PNG download of the map: computed styles and fonts inlined; `data-*` attributes stripped (`data-key` holds a NUL).
 - Loader: a neural-network cone (1/3/6/9/12 neurons, straight cone sides, adjacent layers fully connected). Woven
   threads and reached neurons turn red, spreading layer by layer from the apex; waiting ones are neutral grey; the
@@ -293,3 +297,28 @@ will decide later).
   v8 `forModel` rewording (`Workbench.jsx:89,117`) and drops the exam question and options, so the browser never runs
   the option mapping the measured dev pipeline uses; compare raw vs reworded input on a fixed question set before
   changing it. Not deployed.
+- 2026-10-28 (v10 input path, cloud session): compared the v10 inputs on a fixed set: the 6 page examples plus 60
+  generated questions with known answers (`tools/input-compare/questions.json`, from the model repo's
+  `python -m eval.web_input_set`; 18 with options; no private dev/test questions), answered through the synced
+  Node/Pyodide pipeline (`node tools/input-compare/compare.mjs`). Beam 16 (high tier): old input (`forModel`, question
+  and options removed, picker question added) 57/66 = 86.4%; the same without rewording 57/66; raw pasted text 63/66 =
+  95.5%, exam score with option letters 64/66 = 97.0% (keyed option 18/18); raw fixed 7, broke 1 (McNemar exact
+  p = 0.07). Shipped rule vs old input: beam 8 63/66 = 95.5% vs 58/66 = 87.9% (6 fixed, 1 broken); beam 4 60/66 =
+  90.9% vs 52/66 = 78.8% (10 fixed, 2 broken). Latency on the 4-core cloud box, 4 WASM threads, mean / p90 / max:
+  beam 16 old 3.7 / 5.7 / 88.7 s, shipped 1.4 / 3.8 / 5.5 s; beam 8 2.8 / 3.4 / 80.8 s vs 0.8 / 2.4 / 3.4 s; beam 4
+  1.7 / 2.3 / 44.4 s vs 0.6 / 1.5 / 2.2 s. Why: `forModel` hides "X is the son of Y" from kinlogic's exact rule readers
+  (22 of 66 answered with no reader call vs 11); `splitQuestion` deletes facts sharing the question's sentence ("If
+  Umesh's child is Utkarsh, then how is Utkarsh related to Umesh?" left an empty story); options let `kinlogic.exam`
+  pick the keyed option. Consistent loss: one nested detour chain (obfuscated-11). Changed: v10 reads the text as
+  written (`exam.js readerInput`, a `reader` field through client.js/worker.js, `askV10(..., { asked })`); a pasted
+  question about other people is dropped with its options; if the reading's question is not the picked pair the
+  pipeline adds the picker's question and reads again; a chosen "cannot be determined" option shows as no established
+  relation (it read "B is A's cannot be determined"). v8 still reads `forModel`. Tests: `readerInput` unit tests;
+  real-model tests for the option pick, the picker fallback and "cannot be determined". `bun run check`: lint, 147
+  tests (146 pass, 1 intentional skip), static build; runtime e881499ef517, model c4a1d87737c6 unchanged (measured on
+  runtimes 5f7b1ad0feed / d5154c2efcc9; the last change touches no measured row). Headless Chromium (Playwright; the
+  owner's Chrome is not reachable from the cloud box) on the built site via the harness server answered three pasted
+  questions right (son 1.2 s, father 6 ms, brother 1.1 s; beam 8, 2 threads), no console errors. Open: a check in the
+  owner's Chrome; the spoken-clue "not supported" tip (described-person questions 12/12 raw; owner's call); production
+  still runs without `--adaptive`/`--para`; generated set only (dev 73.9% / locked 68.8% unchanged). Built on branch
+  `claude/nice-hamilton-3ttcwr` (decoder parity). Not deployed.

@@ -319,16 +319,16 @@
       "sha256": "888a06dcb423fd63ee081f9a77935fb00a040dbacb7363b24853b6619e36df67"
     },
     "v10-model/runtime/worker.js": {
-      "bytes": 14055,
-      "sha256": "5c194a8b4e4471666e83ce3377aee1080d79cdc5f8bf6e6690d09f5c4fd35ef1"
+      "bytes": 14349,
+      "sha256": "df82e4a8071ef001e7d28f58bc856cb8238484f27c033f7828377068311eb439"
     },
     "v10-model/runtime/v10-decoder.js": {
       "bytes": 8610,
       "sha256": "b4080ea2dac4d7420de5c17bbff400ecabd40a5103dfb586e0cc63b35e9d8823"
     },
     "v10-model/runtime/v10-pipeline.js": {
-      "bytes": 8904,
-      "sha256": "18a1c464d564254dbf9944d7798ba1efbffb6794f7ed164939787d378896c226"
+      "bytes": 10119,
+      "sha256": "3fbb81a49c64252fce39c93873bad534711fa80e9ed33b18ebe00720ded3cb3c"
     },
     "v10-model/runtime/file-integrity.js": {
       "bytes": 186,

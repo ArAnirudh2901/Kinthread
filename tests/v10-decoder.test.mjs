@@ -5,6 +5,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { V10Decoder } from '../runtime/v10-decoder.js';
+import { readerInput } from '../src/lib/exam.js';
 
 const meta = {
   vocab: ['<pad>', '<unk>', '<bos>', '<c>', '<sep>', '<eos>', '@0', '@1', 'ask'],
@@ -87,7 +88,8 @@ test('v10 beam treats reader outputs as log probabilities and ends after a compl
   assert.ok(decoder.lastMetrics.decoderMs >= decoder.lastMetrics.prefillMs);
 });
 
-test('v10-r8p Pyodide answer path solves a three-link story with threaded reader', async () => {
+let v10 = null;   // one real-model runtime shared by the tests below
+const loadV10 = () => v10 ??= (async () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const release = JSON.parse(await readFile(path.join(root, 'public/model-release.json'), 'utf8'));
   const model = release.model;
@@ -113,9 +115,43 @@ test('v10-r8p Pyodide answer path solves a three-link story with threaded reader
     }));
   };
   const ready = await initializeV10({ model, ctx: {}, getFile, weightsResponse, engine: 'mt', deviceTier: 'high', maxThreads: 4 });
+  return { ready, askV10 };
+})();
+
+test('v10-r8p Pyodide answer path solves a three-link story with threaded reader', async () => {
+  const { ready, askV10 } = await loadV10();
   const { result } = askV10("Arvind's daughter Leena was there. Arvind's sister is Meera. Meera's son is Kabir.", 'Leena', 'Kabir');
   assert.equal(result.relation, 'paternal cousin');
   assert.equal(result.status, 'assumed');
   assert.ok(result.forwardMs > 0 && result.forwardMs < result.ms);
   assert.ok(ready.threads >= 1 && ready.threads <= 4);
+});
+
+// The Workbench input: the pasted text as written, so kinlogic.exam maps the answer onto the options (eval.run_real's
+// input). The v8 rewording loses this question's only fact, which shares the question's sentence.
+test('v10-r8p reads a pasted exam question with its options and picks the option', async () => {
+  const { askV10 } = await loadV10();
+  const text = "If Umesh's child is Utkarsh, then how is Utkarsh related to Umesh? (1) Wife (2) Son-in-law (3) Brother (4) Son";
+  const input = readerInput(text, 'Umesh', 'Utkarsh');
+  assert.deepEqual(input, { text, asked: true });
+  const { result } = askV10(input.text, 'Umesh', 'Utkarsh', [], { asked: input.asked });
+  assert.equal(result.relation, 'son');
+  assert.equal(result.option, '4');
+  assert.ok(result.decodeCalls >= 1);   // read by the model, not only the exact rules
+});
+
+test('v10-r8p reports a chosen "cannot be determined" option as no established relation', async () => {
+  const { askV10 } = await loadV10();
+  const text = 'A is the brother of B. How is B related to A? (a) Brother (b) Sister (c) Cannot be determined (d) Father';
+  const { result } = askV10(text, 'A', 'B', [], { asked: true });   // B's gender is never given
+  assert.equal(result.option, 'c');
+  assert.equal(result.kind, 'unknown');
+  assert.equal(result.relation, null);
+});
+
+test('v10-r8p asks the picker\'s question when the text\'s own question is about the other direction', async () => {
+  const { askV10 } = await loadV10();
+  const text = 'The husband of the mother of Padma is Adam. Adam is the ____ of Padma.';
+  assert.equal(askV10(text, 'Padma', 'Adam', [], { asked: true }).result.relation, 'father');   // its own question
+  assert.equal(askV10(text, 'Adam', 'Padma', [], { asked: true }).result.relation, 'daughter');   // read again, picker's
 });
