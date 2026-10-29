@@ -22,6 +22,40 @@ test('v10 grammar permits EOS before facts and after a completed fact', () => {
   assert.ok(decoder.allowed([';'], ['@0']).includes('<eos>'));
 });
 
+test('v10 grammar permits EOS right after a complete statement, like kinlogic.facts.allowed_next', () => {
+  const decoder = new V10Decoder({}, meta);
+  assert.deepEqual(decoder.allowed(['ask', '@0', '@1'], ['@0', '@1']), [';', '<eos>']);
+  assert.ok(!decoder.allowed(['ask', '@0'], ['@0', '@1']).includes('<eos>'));
+});
+
+test('v10 budget filter finishes the reading with a question near the token cap', () => {
+  const decoder = new V10Decoder({}, meta, 8, 96, 8);
+  const ents = ['@0', '@1'];
+  assert.ok(decoder.allowed([], ents, 50).includes('@0'));
+  assert.deepEqual(decoder.allowed([], ents, 3), ['ask', 'prof']);
+  assert.deepEqual(decoder.allowed(['ask', '@0', '@1'], ents, 2), ['<eos>']);
+});
+
+test('v10 beam lets each decoded token attend to itself and stops at k finished readings', () => {
+  const ids = new Map(meta.vocab.map((token, i) => [token, i]));
+  const next = new Map([[ids.get('ask'), '@0'], [ids.get('@0'), '@1'], [ids.get('@1'), '<eos>']]);
+  const distribution = (token) => {
+    const out = new Float32Array(meta.vocab.length).fill(-20);
+    out[ids.get(next.get(token) ?? 'ask')] = 0;
+    return out;
+  };
+  const seen = [];
+  const reader = {
+    prefill(inputIds) { return { prefixLength: inputIds.length, logprobs: distribution(ids.get('<c>')) }; },
+    forward(rows) { seen.push(...rows); return rows.map((row) => ({ row })); },
+    logProbabilities(state) { return distribution(state.row.token); },
+  };
+  const decoder = new V10Decoder(reader, meta, 1, 16);
+  assert.equal(decoder.generate(['@0', '@1'], 1)[0][0], 'ask @0 @1');
+  assert.ok(seen.length && seen.every((row) => row.context.at(-1) === row.slot && row.context.includes(row.position - 1)));
+  assert.equal(decoder.lastMetrics.decodeSteps, 4);   // ask, @0, @1, <eos>: no forced ';' and no steps after k
+});
+
 test('v10 beam treats reader outputs as log probabilities and ends after a completed fact', () => {
   const ids = new Map(meta.vocab.map((token, i) => [token, i]));
   const favored = new Map([
