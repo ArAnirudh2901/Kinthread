@@ -322,3 +322,6 @@ will decide later).
   owner's Chrome; the spoken-clue "not supported" tip (described-person questions 12/12 raw; owner's call); production
   still runs without `--adaptive`/`--para`; generated set only (dev 73.9% / locked 68.8% unchanged). Built on branch
   `claude/nice-hamilton-3ttcwr` (decoder parity). Not deployed.
+- 2026-10-29 (one branch): `main` now holds the v10 decoder parity fix and the pasted text read as written (merged from
+  the two claude/* branches; runtime e881499ef517, model unchanged; `bun run check`: 146 pass, 1 intentional skip,
+  static export). Not deployed. Only `main` remains (the merged branches are deleted on GitHub).

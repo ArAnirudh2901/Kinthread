@@ -3,7 +3,7 @@
 State now (2026-10-26): the site (Next.js static export, Cloudflare Pages `kinthread.pages.dev`) still runs the old v8 QA GPT (13M) in
 WASM (`vendor/kinship/`: `engine.c` -> 6 WASM builds, `kinship.js` worker, `model/` fp32 byte-shuffled gzip parts,
 SHA-256 manifest, resumable downloads, cone loader, share links, contradiction checks, COOP/COEP in `_headers`).
-Selected system (model repo `Kinthread-llm-model`, branch `v9-reader`; story in `2_Training_Tiny_LLM/JOURNEY.md`):
+Selected system (model repo `Kinthread-llm-model`, branch `main`; story in `2_Training_Tiny_LLM/JOURNEY.md`):
 `prepare` -> exact readers (codes/rules/speech) -> v10 reader (39.5M, 16x384, RoPE, RMSNorm, SwiGLU, tied embeddings,
 copy head, optional prefix-LM mask, sub-word vocab 28,836) with grammar-constrained beam -> exact engine (`kinlogic/`,
 pure Python) -> exam layer (vote, conventions, options) + answer-time boosters chosen by `FINAL.json`.
