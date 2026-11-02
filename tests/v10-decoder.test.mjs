@@ -155,3 +155,19 @@ test('v10-r8p asks the picker\'s question when the text\'s own question is about
   assert.equal(askV10(text, 'Padma', 'Adam', [], { asked: true }).result.relation, 'father');   // its own question
   assert.equal(askV10(text, 'Adam', 'Padma', [], { asked: true }).result.relation, 'daughter');   // read again, picker's
 });
+
+// A friend is not family, and a story without a final full stop must read the same as one with it (2026-11-02: the
+// statement-check result for Sita and Ashok had no steps and crashed the page).
+test('v10-r8p answers every pair of a friend story the same way in every wording', async () => {
+  const { askV10 } = await loadV10();
+  const pairs = [['Sita', 'Ashok', 'unknown', null], ['Sita', 'Raju', 'answer', 'brother'], ['Raju', 'Sita', 'answer', 'sister']];
+  for (const story of ['Raju is friend of Ashok, Sita is the sister of Raju', "Ashok's friend is Raju. Sita is Raju's sister.",
+    'raju is friend of ashok, sita is the sister of raju']) {
+    for (const [a, b, kind, relation] of pairs) {
+      const { result } = askV10(story, a, b);
+      assert.equal(result.kind, kind, `${story} | ${a} ${b}`);
+      assert.equal(result.relation, relation, `${story} | ${a} ${b}`);
+      assert.notEqual(result.status, 'claims');
+    }
+  }
+});

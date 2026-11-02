@@ -26,7 +26,8 @@ export default function Solution({ run, tentative, progress, player }) {
     else if (e.key === 'ArrowLeft') { e.preventDefault(); player.current?.prev(); }
   };
 
-  const mismatch = final.word && final.word !== r.relation;
+  const fw = final?.word;   // no steps (an answer without a traced path): nothing to compare
+  const mismatch = !!fw && fw !== r.relation;
   const words18 = new Set(['aunt', 'brother', 'daughter', 'daughter-in-law', 'father', 'father-in-law', 'granddaughter', 'grandfather', 'grandmother', 'grandson', 'mother', 'mother-in-law', 'nephew', 'niece', 'sister', 'son', 'son-in-law', 'uncle']);
 
   const rows = [
@@ -73,12 +74,12 @@ export default function Solution({ run, tentative, progress, player }) {
           </span>
           {mismatch && (
             <span className={s.warn}>
-              {words18.has(final.word)
-                ? <>Check this one: these steps add up to <b>{final.word}</b>, but the model answered <b>{r.relation}</b>. Small models can slip, so read the story again.</>
-                : <>These steps add up to <b>{final.word}</b>, which is not one of the 18 answers this model can give, so it chose the closest one it knows.</>}
+              {words18.has(fw)
+                ? <>Check this one: these steps add up to <b>{fw}</b>, but the model answered <b>{r.relation}</b>. Small models can slip, so read the story again.</>
+                : <>These steps add up to <b>{fw}</b>, which is not one of the 18 answers this model can give, so it chose the closest one it knows.</>}
             </span>
           )}
-          {!final.word && words.length > 1 && (
+          {!fw && words.length > 1 && (
             <span className={s.note}>The steps alone could fit more than one relationship; the model chose {r.relation}.</span>
           )}
         </>

@@ -157,17 +157,22 @@ export function detectV10(story, extra = []) {
 // question is not b's relation to a (or none is read), the picker's question is added and the text read again.
 export function askV10(story, a, b, extra = [], { asked = false } = {}) {
   const t0 = performance.now();
-  const question = asked ? story.trim() : `${story.trim()}${story.trim() ? ' ' : ''}How is ${b} related to ${a}?`;
+  // the story's last sentence must end before the question, or the two read as one ("... of Raju How is ...")
+  const body = story.trim() && !/[.!?…]["'”’)\]]*$/.test(story.trim()) ? `${story.trim()}.` : story.trim();
+  const question = asked ? story.trim() : `${body}${body ? ' ' : ''}How is ${b} related to ${a}?`;
   telemetry = { decodeCalls: 0, promptTokens: 0, prefillRows: 0, decodeRows: 0, decodeSteps: 0,
     prefillMs: 0, forwardMs: 0, probabilityMs: 0, decoderMs: 0 };
   let r;
-  try { r = callPython('kinthread_solve', question, extra, asked ? [a, b] : null); }
+  const names = [...new Set([...extra, a, b].filter(Boolean))];   // the picked pair are people in any case ("raju is ...")
+  try { r = callPython('kinthread_solve', question, names, asked ? [a, b] : null); }
   catch (error) { telemetry = null; throw error; }
   const metrics = telemetry;
   telemetry = null;
   const inferenceMs = performance.now() - t0;
   // "cannot be determined": an answer option kinlogic.exam chose (the text leaves the relation open), not a relation
-  const low = ['none', 'unrelated', 'contradiction'].includes(r.status) || /^(?:not related|cannot be determined)\b/i.test(r.answer || '');
+  // a pair question has no statements to check: a claims/sufficiency result there is a misreading, not a relation
+  const low = ['none', 'unrelated', 'contradiction', 'error'].includes(r.status) || (!asked && ['claims', 'sufficiency'].includes(r.status))
+    || /^(?:not related|cannot be determined)\b/i.test(r.answer || '');
   const relation = low ? null : r.answer;
   const kind = low ? 'unknown' : r.status === 'unique' && r.confidence >= 0.7 ? 'answer' : 'not sure';
   const entities = Object.fromEntries((r.entities || []).map((e) => [e.id, e.text]));
