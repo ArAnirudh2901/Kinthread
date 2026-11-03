@@ -12,7 +12,8 @@ const FALLBACK_MODEL = path.join(VENDOR, 'v10-model');
 const web = existsSync(path.join(src, 'web/reader.js')) ? path.join(src, 'web') : path.join(FALLBACK_MODEL, 'runtime');
 const exportDir = path.resolve(process.env.KINSHIP_V10_EXPORT || (existsSync(path.join(src, 'web/v10/manifest.json')) ? path.join(src, 'web/v10') : FALLBACK_MODEL));
 const PART_BYTES = 2 * 1024 * 1024;
-const RELEASE = { releaseId: 'v10-r8p', checkpoint: 'runs/v10-r8p-final/best.pt', checkpointSha256: '38c289d351d6517b5cde1bc9fb64ea97bd33eee193639d6351edda52fdfd7a52' };
+const RELEASE = { releaseId: 'v10-r13', checkpoint: 'runs/v10-r13-final/best.pt', checkpointSha256: '5da53fb28d79973525d1b96a5f5fd6fd48bf7d03d8c36f3b0242ea2b110c3d3a' };
+const RELEASE_STEP = 1000;   // r13: r8p + twin training, best at step 1,000
 const MODEL_NAMES = ['reader.json', 'verifier.json', 'FINAL.json', 'name_table.tsv.gz', 'kinlogic.zip'];
 const PYODIDE_NAMES = ['pyodide.mjs', 'pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json'];
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
@@ -55,7 +56,7 @@ if (existsSync(path.join(exportDir, 'reader.bin.gz'))) {
   if (weights.reduce((n, p) => n + p.bytes.length, 0) !== weightBytes || combined.digest('hex') !== weightSha256) fail('split v10 reader weights do not match the original gzip hash');
 }
 const meta = JSON.parse(model['reader.json']);
-if (meta.arch !== 'v10' || meta.checkpoint?.step !== 6000) fail('reader metadata is not the selected v10-r8p step-6000 export');
+if (meta.arch !== 'v10' || meta.checkpoint?.step !== RELEASE_STEP) fail(`reader metadata is not the selected ${RELEASE.releaseId} step-${RELEASE_STEP} export`);
 
 const runtime = {};
 for (const name of ['reader.js', 'reader-scalar.mjs', 'reader-scalar.wasm', 'reader-simd.mjs', 'reader-simd.wasm',
@@ -140,7 +141,7 @@ const vendorExportManifest = {
 };
 vendorFiles['v10-model/manifest.json'] = Buffer.from(`${JSON.stringify(vendorExportManifest, null, 2)}\n`);
 for (const [name, buf] of Object.entries(runtime)) vendorFiles[`v10-model/runtime/${name}`] = buf;
-const vendorManifest = { note: 'SHA-256 of v10-r8p export and browser runtime; checked by scripts/sync-runtime.mjs', release: RELEASE,
+const vendorManifest = { note: `SHA-256 of ${RELEASE.releaseId} export and browser runtime; checked by scripts/sync-runtime.mjs`, release: RELEASE,
   files: Object.fromEntries(Object.entries(vendorFiles).map(([name, buf]) => [name, { bytes: buf.length, sha256: sha256(buf) }])) };
 await writeFile(path.join(VENDOR, 'manifest.json'), `${JSON.stringify(vendorManifest, null, 2)}\n`);
 await rm(FALLBACK_MODEL, { recursive: true, force: true });

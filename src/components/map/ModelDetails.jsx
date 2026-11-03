@@ -48,7 +48,7 @@ export default function ModelDetails({ run, info }) {
           </span></dd></div>}
         </dl>
         {v10 ? <p className={s.calib}>
-          <strong>How often is it right?</strong> Browser calibration has not been measured for v10-r8p. The v8 results do not apply.
+          <strong>How often is it right?</strong> Browser calibration has not been measured for v10-r13. The v8 results do not apply.
         </p> : <p className={s.calib}>
           <strong>How often is it right?</strong> With these settings, on {v.questions} held-out stories needing {v.steps} steps,
           confident answers ({v.confident} of them) were correct {pct(v.confidentCorrect)} of the time and tentative guesses {pct(v.tentativeCorrect)}.

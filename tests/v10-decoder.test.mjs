@@ -118,7 +118,7 @@ const loadV10 = () => v10 ??= (async () => {
   return { ready, askV10 };
 })();
 
-test('v10-r8p Pyodide answer path solves a three-link story with threaded reader', async () => {
+test('v10 Pyodide answer path solves a three-link story with threaded reader', async () => {
   const { ready, askV10 } = await loadV10();
   const { result } = askV10("Arvind's daughter Leena was there. Arvind's sister is Meera. Meera's son is Kabir.", 'Leena', 'Kabir');
   assert.equal(result.relation, 'paternal cousin');
@@ -129,7 +129,7 @@ test('v10-r8p Pyodide answer path solves a three-link story with threaded reader
 
 // The Workbench input: the pasted text as written, so kinlogic.exam maps the answer onto the options (eval.run_real's
 // input). The v8 rewording loses this question's only fact, which shares the question's sentence.
-test('v10-r8p reads a pasted exam question with its options and picks the option', async () => {
+test('v10 reads a pasted exam question with its options and picks the option', async () => {
   const { askV10 } = await loadV10();
   const text = "If Umesh's child is Utkarsh, then how is Utkarsh related to Umesh? (1) Wife (2) Son-in-law (3) Brother (4) Son";
   const input = readerInput(text, 'Umesh', 'Utkarsh');
@@ -140,7 +140,7 @@ test('v10-r8p reads a pasted exam question with its options and picks the option
   assert.ok(result.decodeCalls >= 1);   // read by the model, not only the exact rules
 });
 
-test('v10-r8p reports a chosen "cannot be determined" option as no established relation', async () => {
+test('v10 reports a chosen "cannot be determined" option as no established relation', async () => {
   const { askV10 } = await loadV10();
   const text = 'A is the brother of B. How is B related to A? (a) Brother (b) Sister (c) Cannot be determined (d) Father';
   const { result } = askV10(text, 'A', 'B', [], { asked: true });   // B's gender is never given
@@ -149,7 +149,7 @@ test('v10-r8p reports a chosen "cannot be determined" option as no established r
   assert.equal(result.relation, null);
 });
 
-test('v10-r8p asks the picker\'s question when the text\'s own question is about the other direction', async () => {
+test('v10 asks the picker\'s question when the text\'s own question is about the other direction', async () => {
   const { askV10 } = await loadV10();
   const text = 'The husband of the mother of Padma is Adam. Adam is the ____ of Padma.';
   assert.equal(askV10(text, 'Padma', 'Adam', [], { asked: true }).result.relation, 'father');   // its own question
@@ -158,7 +158,7 @@ test('v10-r8p asks the picker\'s question when the text\'s own question is about
 
 // A friend is not family, and a story without a final full stop must read the same as one with it (2026-11-02: the
 // statement-check result for Sita and Ashok had no steps and crashed the page).
-test('v10-r8p answers every pair of a friend story the same way in every wording', async () => {
+test('v10 answers every pair of a friend story the same way in every wording', async () => {
   const { askV10 } = await loadV10();
   const pairs = [['Sita', 'Ashok', 'unknown', null], ['Sita', 'Raju', 'answer', 'brother'], ['Raju', 'Sita', 'answer', 'sister']];
   for (const story of ['Raju is friend of Ashok, Sita is the sister of Raju', "Ashok's friend is Raju. Sita is Raju's sister.",
