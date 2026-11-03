@@ -5,12 +5,15 @@ let reader;
 let decoder;
 let py;
 let beam = 4;
+let maxTokens = 416;
 let telemetry = null;
+const MAX_PEOPLE = 32;   // reader entity slots (src/lib/story.js MAX_PEOPLE)
 
 const jsonFile = async (entry, getFile, ctx) => JSON.parse(new TextDecoder().decode(await getFile(entry.json, ctx)));
 
 export async function initializeV10({ model, ctx, getFile, weightsResponse, engine = 'auto', deviceTier = 'high', maxThreads = 1 }) {
   beam = deviceTier === 'low' ? 4 : deviceTier === 'balanced' ? 8 : 16;
+  maxTokens = Math.max(1, (model.blockSize || 512) - 96);   // same limit the worker reports to the editor
   const threaded = engine === 'mt' || (engine === 'auto' && deviceTier !== 'low' && maxThreads > 1
     && (globalThis.navigator?.deviceMemory || 0) >= 8 && globalThis.crossOriginIsolated === true);
   const readerEngine = threaded ? 'mt' : engine === 'single' ? 'scalar' : engine;
@@ -58,6 +61,9 @@ from kinlogic.facts import parse
 from kinlogic.names import name_priors
 from kinlogic import exam
 exam.COVER = True
+exam.CLOSURE = True   # two named people found unrelated, with unnamed relatives: everyone named is one family (dev replay: no change)
+exam.GUARDS = True   # no family words, step/half relations, contradictions the exact reader finds: no guessed answer
+exam.NAME_CLASH = 0.25   # a reading that makes Barkha a son loses weight (dev replay: no change)
 
 def _read(batch):
     return json.loads(str(read_js(json.dumps(batch, separators=(',', ':')))))
@@ -71,7 +77,7 @@ def _solve_text(text, extra):
     p = prepare(text, names=extra)
     priors = name_priors(p['ents'])
     read = with_exact_clauses(with_split_search(_read))
-    return p, priors, answer(text, read, priors=priors)
+    return p, priors, answer(text, read, priors=priors, names=extra)
 
 def _asks(r, p, want):
     asks = [s for s in parse(r.get('facts') or '')[0] if s['t'] == 'ask']
@@ -114,7 +120,9 @@ def kinthread_solve(text, extra_json, want_json='null'):
             from_name = labels.get(target, target)
     fact_edges = [{'from': s['x'], 'to': s['y'], 'relation': s['r']} for s in stmts
                   if s.get('t') == 'rel' and 'claim' not in s and 'part' not in s]
-    result = {'answer': r.get('answer'), 'option': r.get('option'), 'status': r.get('status'), 'confidence': r.get('confidence', 0.0),
+    found = list(dict.fromkeys(a.get('label') or a.get('key') for a in q['answers'])) if q and q.get('answers') else []
+    result = {'answer': r.get('answer'), 'option': r.get('option'), 'status': r.get('status'), 'confidence': r.get('confidence', 0.0), 'found': found,
+              'optionText': next((t for k, t in p['options'] or [] if k == r.get('option')), None),
               'facts': r.get('facts', ''), 'explanation': r.get('explanation', ''), 'steps': steps,
               'people': [e['text'] for e in p['ents']], 'prepared': p['tokens'], 'entities': p['ents'],
               'traceFacts': [s.strip() for s in (r.get('facts') or '').split(';') if s.strip() and not s.strip().startswith('ask ')],
@@ -161,8 +169,29 @@ export function detectV10(story, extra = []) {
 
 // asked: the text holds its own question (and any answer options), so it is read exactly as written; when the reading's
 // question is not b's relation to a (or none is read), the picker's question is added and the text read again.
+const plain = (t) => String(t || '').normalize('NFKC').replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, '').replace(/[‘’`]/g, "'");   // as kinlogic.prepare
+const nameKey = (n) => plain(n).trim().toLowerCase().replace(/^(?:a|an|the)\s+/, '');
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// same / too long / refused: the checks v8 made, so the editor's own views explain them (lib/kinds.js)
+function precheck(story, a, b, extra, t0) {
+  const early = (kind, people) => ({ result: { kind, relation: null, option: null, status: kind, confidence: 0, steps: [], share: 0,
+    pUnknown: 1, pStart: 1, pLink: 0, views: 0, beam, promptTokens: 0, forwardRows: 0, decodeRows: 0, decodeSteps: 0,
+    decodeCalls: 0, prefillMs: 0, forwardMs: 0, probabilityMs: 0, decoderMs: 0, pipelineMs: 0, factEdges: [], people,
+    text: '', ms: performance.now() - t0 }, trace: null });
+  if (nameKey(a) === nameKey(b)) return early('same', [a]);
+  const seen = callPython('kinthread_detect', story, extra);
+  if (seen.tokens > maxTokens || seen.people.length > MAX_PEOPLE) return early('too long', seen.people);
+  const text = plain(story);
+  const inText = (n) => new RegExp(`(?:^|[^\\p{L}\\p{N}])${escapeRe(nameKey(n))}(?![\\p{L}\\p{N}])`, 'iu').test(text);
+  if (![a, b].every(inText)) return early('refused', seen.people.filter(inText));
+  return null;
+}
+
 export function askV10(story, a, b, extra = [], { asked = false } = {}) {
   const t0 = performance.now();
+  const stop = precheck(story, a, b, extra, t0);
+  if (stop) return stop;
   // the story's last sentence must end before the question, or the two read as one ("... of Raju How is ...")
   const body = story.trim() && !/[.!?…]["'”’)\]]*$/.test(story.trim()) ? `${story.trim()}.` : story.trim();
   const question = asked ? story.trim() : `${body}${body ? ' ' : ''}How is ${b} related to ${a}?`;
@@ -177,11 +206,16 @@ export function askV10(story, a, b, extra = [], { asked = false } = {}) {
   const inferenceMs = performance.now() - t0;
   // "cannot be determined": an answer option kinlogic.exam chose (the text leaves the relation open), not a relation
   // a pair question has no statements to check, and two picked people are never the same person
+  // an option "cannot be determined" chosen while the engine knows the link (only a gender is open): tentative "child"
+  const open = /^cannot be determined\b/i.test(r.answer || '') && r.found?.length && r.found.length <= 3 ? r.found.join(' or ') : null;
   const low = ['none', 'unrelated', 'contradiction', 'error'].includes(r.status) || (!asked && ['claims', 'sufficiency'].includes(r.status))
     || (r.answer === 'self' && a.trim().toLowerCase() !== b.trim().toLowerCase())
-    || /^(?:not related|cannot be determined)\b/i.test(r.answer || '');
-  const relation = low ? null : r.answer;
-  const kind = low ? 'unknown' : r.status === 'unique' && r.confidence >= 0.7 ? 'answer' : 'not sure';
+    || (!open && /^(?:not related|cannot be determined)\b/i.test(r.answer || ''));
+  // a chosen relation option is shown as written: the winning reading may have voted for it as the nearest option
+  const chosen = r.option && /^[a-z' -]{2,40}$/i.test(r.optionText || '') && r.optionText.trim().split(/\s+/).length <= 4
+    && !/cannot be determined|none of|not related|no relation|inadequate/i.test(r.optionText) ? r.optionText.trim().toLowerCase() : null;
+  const relation = low ? null : open || chosen || r.answer;
+  const kind = low ? 'unknown' : !open && r.status === 'unique' && r.confidence >= 0.7 ? 'answer' : 'not sure';
   const entities = Object.fromEntries((r.entities || []).map((e) => [e.id, e.text]));
   const mapNames = (text) => text.split(/\s+/).map((t) => entities[t] || t).join(' ');
   const trace = { tokens: (r.prepared || []).map((t) => entities[t] || t), entities,

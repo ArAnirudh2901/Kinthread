@@ -140,13 +140,13 @@ test('v10 reads a pasted exam question with its options and picks the option', a
   assert.ok(result.decodeCalls >= 1);   // read by the model, not only the exact rules
 });
 
-test('v10 reports a chosen "cannot be determined" option as no established relation', async () => {
+test('v10 reports a chosen "cannot be determined" option as the link with its gender left open', async () => {
   const { askV10 } = await loadV10();
   const text = 'A is the brother of B. How is B related to A? (a) Brother (b) Sister (c) Cannot be determined (d) Father';
   const { result } = askV10(text, 'A', 'B', [], { asked: true });   // B's gender is never given
   assert.equal(result.option, 'c');
-  assert.equal(result.kind, 'unknown');
-  assert.equal(result.relation, null);
+  assert.equal(result.kind, 'not sure');   // linked (siblings), so never "no family link found"
+  assert.equal(result.relation, 'sibling');
 });
 
 test('v10 asks the picker\'s question when the text\'s own question is about the other direction', async () => {
@@ -180,4 +180,40 @@ test('v10 matches a described person without its article and never answers self 
     const { result } = askV10(text, 'Neha', b, [], { asked: true });
     assert.equal(result.relation, 'son', b);
   }
+});
+
+// "Manish has two children" and the siblings Barkha and Chandresh: an exam puzzle's people are one family (closure).
+test('v10 reads named siblings as the unnamed children of a closed family', async () => {
+  const { askV10 } = await loadV10();
+  const text = 'Barkha and Chandresh are siblings. Manish has two children and he is son of Suresh, who is father-in-law of Hansa. Hansa has only one son. Chandresh is not son-in-law of Suresh. How Barkha is related to Suresh?';
+  const { result } = askV10(text, 'Suresh', 'Barkha', [], { asked: true });
+  assert.equal(result.relation, 'granddaughter');
+});
+
+test('v10 answers every pair of the closed-family puzzle consistently', async () => {
+  const { askV10 } = await loadV10();
+  const story = 'Barkha and Chandresh are siblings. Manish has two children and he is son of Suresh, who is father-in-law of Hansa. Hansa has only one son. Chandresh is not son-in-law of Suresh. ';
+  for (const [a, b, want] of [['Hansa', 'Barkha', 'daughter'], ['Hansa', 'Chandresh', 'son'], ['Suresh', 'Hansa', 'daughter-in-law']]) {
+    const { result } = askV10(`${story}How is ${b} related to ${a}?`, a, b, [], { asked: true });
+    assert.equal(result.relation, want, `${b} to ${a}`);
+  }
+  const withOptions = `${story}How Barkha is related to Suresh? (a) Daughter (b) Granddaughter (c) Niece (d) Daughter-in-law`;
+  const { result } = askV10(withOptions, 'Suresh', 'Barkha', [], { asked: true });
+  assert.equal(result.option, 'b');
+  assert.equal(result.relation, 'granddaughter');   // the chosen option as written, never a nearest-option guess
+});
+
+test('v10 explains selections and inputs it cannot answer instead of guessing', async () => {
+  const { askV10 } = await loadV10();
+  const kind = (story, a, b) => askV10(story, a, b).result.kind;
+  assert.equal(kind('Raju is the brother of Sita.', 'Raju', ' raju '), 'same');
+  assert.equal(kind('Raju is the father of Sita.', 'Raju', 'Kiran'), 'refused');
+  assert.equal(kind('Raju is the father of Sita. ' + 'It was a sunny day and everyone in town was calm. '.repeat(40), 'Raju', 'Sita'), 'too long');
+  assert.equal(kind('Raju and Sita went to the market together.', 'Raju', 'Sita'), 'unknown');
+  assert.equal(kind('Raju is the stepfather of Sita.', 'Sita', 'Raju'), 'unknown');
+  assert.equal(kind('Raju is the father of Sita. Sita is the father of Raju.', 'Raju', 'Sita'), 'unknown');
+  const caps = askV10('RAJU IS THE FATHER OF SITA.', 'RAJU', 'SITA').result;
+  assert.equal(caps.relation, 'daughter');
+  const open = askV10('A is the brother of B. C is the parent of A. How is B related to C? (a) Son (b) Daughter (c) Cannot be determined (d) None', 'C', 'B', [], { asked: true }).result;
+  assert.deepEqual([open.kind, open.relation], ['not sure', 'child']);   // the link is known; only the gender is open
 });

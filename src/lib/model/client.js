@@ -149,6 +149,40 @@ export function modelUpdateAvailable() {
   } catch { return false; }
 }
 
+/** Data saver or a 2G link: a new release waits for a tap instead of downloading by itself. */
+export function constrainedNetwork() {
+  const c = typeof navigator !== 'undefined' ? navigator.connection : null;
+  return !!c && (c.saveData === true || /(^|-)2g$/.test(c.effectiveType || ''));
+}
+
+/** A device that installed an earlier release takes the new one by itself (download, verify, then the old one is deleted). */
+export function autoUpdateAllowed() {
+  return modelUpdateAvailable() && !constrainedNetwork();
+}
+
+const RECHECK_MS = 30 * 60 * 1000;
+let lastCheck = 0;
+
+/** An open tab coming back into view looks for a newer release (at most every 30 min) and installs it when idle. */
+export function watchReleases() {
+  if (typeof document === 'undefined') return () => {};
+  lastCheck = Date.now();
+  const onVisible = () => {
+    if (document.visibilityState !== 'visible' || Date.now() - lastCheck < RECHECK_MS) return;
+    lastCheck = Date.now();
+    verifyPublishedRelease().then((r) => {
+      const current = activeRelease || publishedRelease || RUNTIME.release;
+      if (r.releaseId === current.releaseId && r.contentHash === current.contentHash) return;
+      publishedRelease = r;
+      releaseCheck = Promise.resolve(r);
+      set({ latestReleaseId: r.releaseId });
+      if (state.status === 'ready' && pending.size === 0 && !constrainedNetwork()) startModel({ update: true });
+    }).catch(() => {});   // offline or a failed check: the running model stays; the next visit checks again
+  };
+  document.addEventListener('visibilitychange', onVisible);
+  return () => document.removeEventListener('visibilitychange', onVisible);
+}
+
 /** Refreshes the browser-profile release flag after client hydration. */
 export function refreshModelState() { set({}); }
 

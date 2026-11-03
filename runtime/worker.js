@@ -157,6 +157,32 @@ async function download(url, size, ctx) {
   }
 }
 
+// A release that changes one small file (kinlogic.zip) keeps the rest: an older release's cached copy under the same
+// name is reused when its SHA-256 matches, so returning visitors do not download the 126 MB weights again.
+async function fromOldRelease(f, ctx) {
+  if (!ctx.cache) return null;
+  ctx.oldCaches ??= (async () => {
+    const out = [];
+    try {
+      for (const k of await caches.keys()) {
+        if (k.startsWith(CACHE_PREFIX) && k !== CACHE_PREFIX + ctx.model.contentHash) out.push([k.slice(CACHE_PREFIX.length), await caches.open(k)]);
+      }
+    } catch { /* no Cache Storage */ }
+    return out;
+  })();
+  for (const [version, cache] of await ctx.oldCaches) {
+    const hit = await cache.match(`/m/${version}/${f.file}`).catch(() => null);
+    if (!hit) continue;
+    const buf = new Uint8Array(await hit.arrayBuffer());
+    if (!(await verifyFileBytes(buf, f, sha256))) continue;
+    ctx.progress(buf.length, false);
+    ctx.puts.push(ctx.cache.put(ctx.model.base + f.file, new Response(buf, { headers: { 'content-type': 'application/octet-stream' } }))
+      .catch(() => { ctx.cacheFailed = true; }));
+    return buf;
+  }
+  return null;
+}
+
 async function getFile(f, ctx) {
   const url = ctx.model.base + f.file;
   if (ctx.cache && !ctx.repair) {
@@ -167,6 +193,8 @@ async function getFile(f, ctx) {
       await ctx.cache.delete(url).catch(() => {});
     }
   }
+  const kept = ctx.repair ? null : await fromOldRelease(f, ctx);
+  if (kept) return kept;
   const buf = await download(url, f.bytes, ctx);
   if (!(await verifyFileBytes(buf, f, sha256))) throw new LoadError('integrity', `${f.file} arrived damaged (size or checksum mismatch).`);
   if (ctx.cache) {
@@ -226,7 +254,7 @@ async function init({ model, engine = 'auto', repair = false, maxThreads = 4, ma
       const runtime = await initializeV10({ model, ctx, getFile, weightsResponse, engine, deviceTier, maxThreads });
       await Promise.allSettled(ctx.puts);
       const offline = !!ctx.cache && !ctx.cacheFailed && await isCached(model, ctx.cache);
-      if (offline) await dropOldCaches(cacheKey);
+      await dropOldCaches(cacheKey);   // the new release runs: older models are never used again (their reusable files were taken above)
       v10ReadyMsg = { type: 'ready', ...runtime, arch: model.arch, restored, offline, installed: offline,
         loadMs: performance.now() - t0, maxTokens: Math.max(1, model.blockSize - 96), deviceTier };
       post(v10ReadyMsg);
@@ -236,7 +264,7 @@ async function init({ model, engine = 'auto', repair = false, maxThreads = 4, ma
     qa = await KinshipQA.load({ base: '', fetchFn: (name) => route(name, ctx), engine: kind, maxThreads });
     await Promise.allSettled(ctx.puts);
     const offline = !!ctx.cache && !ctx.cacheFailed && await isCached(model, ctx.cache);
-    if (offline) await dropOldCaches(cacheKey);
+    await dropOldCaches(cacheKey);
     qa.readyMsg = {
       type: 'ready', arch: model.arch, engine: qa.engine, threads: qa.threads, tile: qa.tile, gunzip, restored, offline,
       installed: offline, loadMs: performance.now() - t0, maxTokens: qa.qa.cfg.block_size - 16, deviceTier,

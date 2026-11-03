@@ -23,8 +23,8 @@
       "sha256": "41ab04ebe6a01f3f487c5cb13217133e9e1d27fb6f7d845e1a3936202488b3dd"
     },
     "v10-model/kinlogic.zip": {
-      "bytes": 150319,
-      "sha256": "5136966ef727a4a5cf5b91130920f0e4c403f1a10453baeef85ca5fc18187c64"
+      "bytes": 153282,
+      "sha256": "b93561f9e628cb665dd3eb0f62efe08d5fce00b2263854245cfe386cfd2744a8"
     },
     "v10-model/weights/reader.0.bin": {
       "bytes": 2097152,
@@ -276,7 +276,7 @@
     },
     "v10-model/manifest.json": {
       "bytes": 11323,
-      "sha256": "ed1f6a0a93abf177aa5ab9eb34a3503b9e60f3719bf15a87bbfe4ff62c5a5638"
+      "sha256": "222a90b40f8f4ba2398f1d5fec9aeca19c6a142a9e78c46441ac9d7f5b5e4a01"
     },
     "v10-model/runtime/reader.js": {
       "bytes": 9250,
@@ -319,16 +319,16 @@
       "sha256": "24c17beb738283a70da2f2b960be31bcc4d5896e462101cd3d4769f6f5df71cf"
     },
     "v10-model/runtime/worker.js": {
-      "bytes": 14349,
-      "sha256": "df82e4a8071ef001e7d28f58bc856cb8238484f27c033f7828377068311eb439"
+      "bytes": 15681,
+      "sha256": "627a5af01f58b9c02586e90331f9025cf68539a4f10bb389fc69c99d4cf4fdfc"
     },
     "v10-model/runtime/v10-decoder.js": {
       "bytes": 8610,
       "sha256": "b4080ea2dac4d7420de5c17bbff400ecabd40a5103dfb586e0cc63b35e9d8823"
     },
     "v10-model/runtime/v10-pipeline.js": {
-      "bytes": 11130,
-      "sha256": "4f039a5d86788b13e146f6b473731fe631a8dee87799d93c2df3cbc3dfaae304"
+      "bytes": 14055,
+      "sha256": "abd9182997e0362dfede23197b651c74c8a0030ceb1a843a1c264e98b6e495cc"
     },
     "v10-model/runtime/file-integrity.js": {
       "bytes": 186,

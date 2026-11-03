@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { scrollToTarget } from '@/lib/smooth-scroll';
-import { askModel, checkReleaseOnPageLoad, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
+import { askModel, autoUpdateAllowed, checkReleaseOnPageLoad, detectPeople, modelOnDevice, startModel } from '@/lib/model/client';
 import { useModel } from '@/lib/model/useModel';
 import { gateStore, requestModel } from '@/lib/model/gate';
 import { mbText } from '@/lib/format';
@@ -31,9 +31,9 @@ export default function Workbench() {
   const pickerRef = useRef(null);
   const mapRef = useRef(null);
 
-  // returning visitors start at once; a first visit asks first (ModelGate)
+  // returning visitors start at once, a newer release downloading by itself (not on data saver / 2G); a first visit asks first (ModelGate)
   useEffect(() => {
-    checkReleaseOnPageLoad().then(() => { if (modelOnDevice()) startModel(); });
+    checkReleaseOnPageLoad().then(() => { if (modelOnDevice() || autoUpdateAllowed()) startModel(); });
   }, []);
 
   // A release notice on another route sends the visitor here and opens the existing model download flow.
