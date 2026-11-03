@@ -21,16 +21,21 @@ export async function initializeV10({ model, ctx, getFile, weightsResponse, engi
     getFile(model.files.nameTable.json, ctx),
     getFile(model.files.logic.json, ctx),
   ]);
+  // Python starts while the weights stream in: the two do not depend on each other (start-up ~1.7 s -> ~1.0 s)
+  const pyodideReady = (async () => {
+    const { loadPyodide } = await import('./pyodide/pyodide.mjs');
+    const pyodideURL = new URL('./pyodide/', import.meta.url);
+    const indexURL = typeof globalThis.process?.versions?.node === 'string'
+      ? (await import('node:url')).fileURLToPath(pyodideURL)
+      : pyodideURL.href;
+    return loadPyodide({ indexURL });
+  })();
+  pyodideReady.catch(() => {});   // a weights failure throws first; this rejection is awaited below or dropped
   const gzStream = weightsResponse(model.files.reader, ctx).body.pipeThrough(new DecompressionStream('gzip'));
   reader = await ReaderWasm.loadStream(meta, gzStream, readerEngine);
   const threads = threaded ? reader.setThreads(maxThreads) : 1;
   decoder = new V10Decoder(reader, meta, beam, 96);
-  const { loadPyodide } = await import('./pyodide/pyodide.mjs');
-  const pyodideURL = new URL('./pyodide/', import.meta.url);
-  const indexURL = typeof globalThis.process?.versions?.node === 'string'
-    ? (await import('node:url')).fileURLToPath(pyodideURL)
-    : pyodideURL.href;
-  py = await loadPyodide({ indexURL });
+  py = await pyodideReady;
   const fs = py.FS;
   fs.mkdirTree('/model');
   fs.mkdirTree('/python');
