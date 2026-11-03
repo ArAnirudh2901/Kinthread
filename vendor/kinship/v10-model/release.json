@@ -1,5 +1,5 @@
 {
-  "releaseId": "v10-r13",
-  "checkpoint": "runs/v10-r13-final/best.pt",
-  "checkpointSha256": "5da53fb28d79973525d1b96a5f5fd6fd48bf7d03d8c36f3b0242ea2b110c3d3a"
+  "releaseId": "v10-r15",
+  "checkpoint": "runs/v10-r15-final/best.pt",
+  "checkpointSha256": "9ec3886a9c15b14f7598d27ee2821197cf423d494645ab76863dc2e5444102f3"
 }

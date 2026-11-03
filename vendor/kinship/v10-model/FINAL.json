@@ -1,22 +1,28 @@
 {
- "checkpoint": "r13",
- "base": "r8p + twin training (twins.py), step 1000",
+ "checkpoint": "r15",
+ "base": "r13 + hard constructions (build_hard.py) + teacher rows (teach2.py), twins on",
  "setting": "all",
  "flags": "--verifier /kaggle/working/verifier.json --cover --split_search --para 2 --k 16",
  "dev_final": {
   "r8p": "528/714 = 73.9%",
   "r13": "531/714 = 74.4%",
-  "wins": 8,
-  "losses": 5,
-  "p": 0.5811
+  "r15": "532/714 = 74.5%",
+  "r15_verified": "508/650 = 78.2%",
+  "vs_r8p": {
+   "wins": 16,
+   "losses": 12,
+   "p": 0.572
+  }
  },
  "consistency_all_agree": {
   "r8p": 0.94,
-  "r13": 0.98
+  "r13": 0.98,
+  "r15": 0.99
  },
  "gauntlet": {
   "r8p": 0.9495,
-  "r13": 0.9443
+  "r13": 0.9443,
+  "r15": 0.9503
  },
  "locked_test": null,
  "locked_test_note": "not run: needs the owner approval; r8p locked test was 68.8% fair / 72.2% verified"

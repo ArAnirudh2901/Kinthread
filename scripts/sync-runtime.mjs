@@ -12,8 +12,8 @@ const FALLBACK_MODEL = path.join(VENDOR, 'v10-model');
 const web = existsSync(path.join(src, 'web/reader.js')) ? path.join(src, 'web') : path.join(FALLBACK_MODEL, 'runtime');
 const exportDir = path.resolve(process.env.KINSHIP_V10_EXPORT || (existsSync(path.join(src, 'web/v10/manifest.json')) ? path.join(src, 'web/v10') : FALLBACK_MODEL));
 const PART_BYTES = 2 * 1024 * 1024;
-const RELEASE = { releaseId: 'v10-r13', checkpoint: 'runs/v10-r13-final/best.pt', checkpointSha256: '5da53fb28d79973525d1b96a5f5fd6fd48bf7d03d8c36f3b0242ea2b110c3d3a' };
-const RELEASE_STEP = 1000;   // r13: r8p + twin training, best at step 1,000
+const RELEASE = { releaseId: 'v10-r15', checkpoint: 'runs/v10-r15-final/best.pt', checkpointSha256: '9ec3886a9c15b14f7598d27ee2821197cf423d494645ab76863dc2e5444102f3' };
+const RELEASE_STEP = 2000;   // r15: r13 + hard constructions + teacher rows, twins on; best at step 2,000
 const MODEL_NAMES = ['reader.json', 'verifier.json', 'FINAL.json', 'name_table.tsv.gz', 'kinlogic.zip'];
 const PYODIDE_NAMES = ['pyodide.mjs', 'pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json'];
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
