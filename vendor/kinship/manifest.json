@@ -23,8 +23,8 @@
       "sha256": "41ab04ebe6a01f3f487c5cb13217133e9e1d27fb6f7d845e1a3936202488b3dd"
     },
     "v10-model/kinlogic.zip": {
-      "bytes": 153282,
-      "sha256": "b93561f9e628cb665dd3eb0f62efe08d5fce00b2263854245cfe386cfd2744a8"
+      "bytes": 153695,
+      "sha256": "cbacce179aa04cdcbe4d5ec6bf1a86253de5e73f891610fb7a327702c4b48d07"
     },
     "v10-model/weights/reader.0.bin": {
       "bytes": 2097152,
@@ -276,7 +276,7 @@
     },
     "v10-model/manifest.json": {
       "bytes": 11323,
-      "sha256": "222a90b40f8f4ba2398f1d5fec9aeca19c6a142a9e78c46441ac9d7f5b5e4a01"
+      "sha256": "9123bf30e5c70bfab2657e64812c8e39bfb6d07b50febb32cdf7ecbdd6f942da"
     },
     "v10-model/runtime/reader.js": {
       "bytes": 9250,
