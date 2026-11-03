@@ -95,6 +95,11 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
   for (const n of nodes) { n.x -= mid[0]; n.y -= mid[1]; n.z -= mid[2]; }
   const radius = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y, n.z))) + 0.05;
   const onPath = new Set(path);
+  // the answer thread faces the viewer at every moment: the camera is aimed from the path's own side of the cone
+  // (front-right, so the thread reads as a line down the face, not a vertical through the middle) and only ever
+  // turns a little either way of it. Screen x ~ cos(angle - yaw), depth ~ sin(angle - yaw).
+  const pathAngle = Math.atan2(...path.reduce(([zs, xs], e) => [zs + nodes[edges[e].b].z, xs + nodes[edges[e].b].x], [0, 0]));
+  const yawFront = pathAngle - (Math.PI / 2 - 0.5);
   const pathNodes = new Set([graph.top, ...path.map((e) => edges[e].b)]);
   let C = PALETTES[themeNow()];
   let gl, line, point, buf = {};
@@ -223,8 +228,10 @@ export function createConstellation(canvas, { variant = 'hero', lite = false, st
     const t = Math.max(0, (now - t0) / 1000);   // a frame's timestamp can predate t0 by a few ms
     pointer.x += (pointer.tx - pointer.x) * 0.06;
     pointer.y += (pointer.ty - pointer.y) * 0.06;
-    const spin = variant === 'hero' ? 0.07 * SPIN_TAU * (1 - Math.exp(-t / SPIN_TAU)) : t * 0.07;
-    const yaw = (still ? 0.6 : 0.6 + spin) + pointer.x * 0.35;
+    // hero: turns in and settles onto the front view; loader: rocks gently around it (a full spin would carry the
+    // thread behind the cone)
+    const turn = still ? 0 : variant === 'hero' ? -0.35 * Math.exp(-t / SPIN_TAU) : 0.25 * Math.sin(t * 0.45);
+    const yaw = yawFront + turn + pointer.x * 0.35;
     const pitch = 0.3 + pointer.y * 0.12;
     // distance at which the turning family stays inside the narrower of the two fields of view, at every aspect ratio
     const aspect = canvas.width / canvas.height;

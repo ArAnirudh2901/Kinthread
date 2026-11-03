@@ -1,0 +1,4 @@
+/* old and new text share one cell: the outgoing line fades over the incoming one, never pushing layout */
+.morph { display: grid; justify-items: center; }
+.layer { grid-area: 1 / 1; }
+.piece { display: inline-block; white-space: pre; }

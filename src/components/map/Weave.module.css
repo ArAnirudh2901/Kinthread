@@ -14,13 +14,13 @@
   margin: 0; font-family: var(--font-display); font-weight: 400; font-size: var(--fs-figure); line-height: 0.9;
   letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--ink);
 }
-.count span { font-size: 0.45em; margin-left: 0.06em; color: var(--text-2); letter-spacing: 0; }
-.count[data-ready] { color: var(--answer); animation: ready-in 420ms var(--ease); }
-@keyframes ready-in { from { opacity: 0; transform: translateY(6px) scale(0.98); filter: blur(4px); } }
+.count .pct { font-size: 0.45em; margin-left: 0.06em; color: var(--text-2); letter-spacing: 0; }
+.count [data-id="ready"] { color: var(--answer); }
 .label { margin: 0; font-size: var(--fs-body-lg); font-weight: 600; letter-spacing: -0.005em; }
 .detail { margin: 0; color: var(--text-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
-.primary, .quiet { min-height: 48px; border-radius: 999px; font-weight: 600; font-size: 0.98rem; transition: transform 120ms var(--ease), color var(--t-fast); }
+.primary, .quiet { min-height: 48px; border-radius: 999px; font-weight: 600; font-size: 0.98rem; transition: transform 120ms var(--ease), color var(--t-fast), opacity 220ms var(--ease); }
+.quiet[data-gone] { opacity: 0; visibility: hidden; transition: opacity 220ms var(--ease), visibility 0s 220ms; }
 .primary { padding: 0 24px; border: 0; background: var(--answer-fill); color: var(--on-answer); }
 .quiet { padding: 0 18px; border: 0; background: transparent; color: var(--text-2); }
 @media (hover: hover) and (pointer: fine) { .quiet:hover { color: var(--ink); } }

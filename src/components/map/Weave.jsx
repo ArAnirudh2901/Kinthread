@@ -1,6 +1,7 @@
 'use client';
 import Constellation from '@/components/three/Constellation';
 import { mb, mbText } from '@/lib/format';
+import MorphText from './MorphText';
 import s from './Weave.module.css';
 
 // The one loading design, used by the first-visit window and the map panel alike: the family is shown faintly and is
@@ -27,14 +28,18 @@ export function DownloadStatus({ model, shown, onHide, woven = true }) {
     : model.stage === 'retry' ? 'Connection lost, reconnecting\u2026' : 'Downloading the model';
   const detail = ready ? 'Kinthread works offline from here on.'
     : model.total ? `${mb(model.loaded)} of ${mbText(model.total)} · once, then it loads from this device` : 'Starting…';
+  // each line morphs into the next (MorphText): "100%" blurs out as "Ready" settles in letter by letter
   return (
     <>
-      {/* keyed: "100%" cross-fades into "Ready" instead of being swapped */}
-      <p key={ready ? 'ready' : 'count'} className={s.count} data-ready={ready || undefined} aria-hidden="true">{ready ? 'Ready' : <>{Math.floor(pct)}<span>%</span></>}</p>
-      <p className={s.label} aria-live="polite">{label}</p>
-      <p className={s.detail}>{detail}</p>
+      <MorphText as="p" id={ready ? 'ready' : 'count'} split="chars" className={s.count} aria-hidden="true">
+        {ready ? 'Ready' : <>{Math.floor(pct)}<span className={s.pct}>%</span></>}
+      </MorphText>
+      <MorphText as="p" id={label} className={s.label} aria-hidden="true">{label}</MorphText>
+      <MorphText as="p" id={ready ? 'ready' : 'progress'} className={s.detail}>{detail}</MorphText>
+      <span className="visually-hidden" aria-live="polite">{label}</span>
       <span className="visually-hidden" role="progressbar" aria-label="Model download" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} />
-      {onHide && !ready && <button type="button" className={s.quiet} onClick={onHide}>Hide and keep downloading</button>}
+      {/* stays in the layout and fades: removing it would shift the copy and jolt the weave above */}
+      {onHide && <button type="button" className={s.quiet} onClick={onHide} data-gone={ready || undefined} disabled={ready} aria-hidden={ready || undefined}>Hide and keep downloading</button>}
     </>
   );
 }
