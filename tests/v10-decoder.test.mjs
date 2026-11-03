@@ -171,3 +171,13 @@ test('v10 answers every pair of a friend story the same way in every wording', a
     }
   }
 });
+
+// A described person ("a man") picked or added as "man" is the same person, and two picked people are never "self".
+test('v10 matches a described person without its article and never answers self for two people', async () => {
+  const { askV10 } = await loadV10();
+  const text = 'Pointing to a man, Neha said, "His mother is the only daughter of my father." How is the man related to Neha?';
+  for (const b of ['a man', 'man']) {
+    const { result } = askV10(text, 'Neha', b, [], { asked: true });
+    assert.equal(result.relation, 'son', b);
+  }
+});

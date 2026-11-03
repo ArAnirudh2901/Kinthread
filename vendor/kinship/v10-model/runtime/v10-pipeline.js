@@ -39,7 +39,7 @@ export async function initializeV10({ model, ctx, getFile, weightsResponse, engi
   fs.writeFile('/model/name_table.tsv.gz', names);
   fs.writeFile('/kinlogic.zip', logic);
   await py.runPythonAsync(`
-import json, os, sys, zipfile
+import json, os, re, sys, zipfile
 with zipfile.ZipFile('/kinlogic.zip') as z:
     z.extractall('/python')
 sys.path.insert(0, '/python')
@@ -70,8 +70,9 @@ def _solve_text(text, extra):
 
 def _asks(r, p, want):
     asks = [s for s in parse(r.get('facts') or '')[0] if s['t'] == 'ask']
-    labels = {e['id']: e['text'].lower() for e in p['ents']}
-    return bool(asks) and [labels.get(asks[-1]['x']), labels.get(asks[-1]['y'])] == [w.lower() for w in want]
+    bare = lambda t: re.sub(r'^(?:a|an|the) ', '', (t or '').strip().lower())   # "man" picks the person written "a man"
+    labels = {e['id']: bare(e['text']) for e in p['ents']}
+    return bool(asks) and [labels.get(asks[-1]['x']), labels.get(asks[-1]['y'])] == [bare(w) for w in want]
 
 def kinthread_solve(text, extra_json, want_json='null'):
     extra, want = json.loads(extra_json), json.loads(want_json)
@@ -170,8 +171,9 @@ export function askV10(story, a, b, extra = [], { asked = false } = {}) {
   telemetry = null;
   const inferenceMs = performance.now() - t0;
   // "cannot be determined": an answer option kinlogic.exam chose (the text leaves the relation open), not a relation
-  // a pair question has no statements to check: a claims/sufficiency result there is a misreading, not a relation
+  // a pair question has no statements to check, and two picked people are never the same person
   const low = ['none', 'unrelated', 'contradiction', 'error'].includes(r.status) || (!asked && ['claims', 'sufficiency'].includes(r.status))
+    || (r.answer === 'self' && a.trim().toLowerCase() !== b.trim().toLowerCase())
     || /^(?:not related|cannot be determined)\b/i.test(r.answer || '');
   const relation = low ? null : r.answer;
   const kind = low ? 'unknown' : r.status === 'unique' && r.confidence >= 0.7 ? 'answer' : 'not sure';
